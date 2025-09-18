@@ -22,7 +22,7 @@ body:
   - type: textarea
     id: acceptance_criteria
     attributes:
-      label: Acceptance Criteria
+      label: Acceptance Criteria/Definition of Done
       description: >-
         What must be done for this work to be considered complete? These can be
         a checklist of tasks or a description of the expected outcome. If
@@ -30,7 +30,7 @@ body:
         here.
       placeholder: "- [ ] e.g. x is done in y way so that z can be achieved"
     validations:
-      required: false
+      required: true
   - type: textarea
     id: dependencies
     attributes:
