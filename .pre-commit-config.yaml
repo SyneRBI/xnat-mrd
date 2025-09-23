@@ -125,3 +125,5 @@ repos:
     hooks:
       - id: pretty-format-java
         args: [--aosp,--autofix]
+      - id: pretty-format-xml
+        args: [--autofix]
