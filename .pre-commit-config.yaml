@@ -75,7 +75,7 @@ repos:
     rev: v1.5.5
     hooks:
       - id: forbid-tabs
-        exclude: \.(tsv|xsd)$
+        exclude: \.(tsv|xsd|xml)$
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.24.2
     hooks:
