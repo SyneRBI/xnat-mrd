@@ -141,3 +141,7 @@ repos:
     rev: v2.0.0
     hooks:
       - id: pretty-format-java
+        files: \.(java|vm|vsl)$
+        args:
+          - --aosp
+          - --autofix
