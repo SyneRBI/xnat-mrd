@@ -20,10 +20,13 @@ plugins {
     id "io.franzbecker.gradle-lombok" version "4.0.0"
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
     id "org.nrg.xnat.build.xnat-data-builder" version "1.8.3"
+    id "maven-publish"
 }
 
 group "gov.ptb.qmri.xnat"
-version "1.0.0-SNAPSHOT"
+def pluginVersion = System.getenv("JAR_VERSION")
+version pluginVersion
+
 description "XNAT plugin to support ISMRMRD raw data"
 
 // This provides access to all of these repositories for dependency resolution.
@@ -240,4 +243,18 @@ task xnatPluginJar(type: Jar) {
         exclude "META-INF/*.RSA"
     }
     with jar
+}
+
+
+publishing {
+  repositories {
+    maven {
+      name = "GitHubPackages"
+      url = "https://maven.pkg.github.com/SyneRBI/xnat-mrd"
+      credentials {
+        username = System.getenv("GITHUB_ACTOR")
+        password = System.getenv("GITHUB_TOKEN")
+      }
+    }
+  }
 }
