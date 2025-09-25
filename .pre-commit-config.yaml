@@ -48,7 +48,7 @@ repos:
               }
             }
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.9
+    rev: v0.13.1
     hooks:
       - id: ruff
         args:
@@ -56,14 +56,14 @@ repos:
           - --fix
       - id: ruff-format
   - repo: https://github.com/crate-ci/typos
-    rev: v1.30.0
+    rev: v1.36.2
     hooks:
       - id: typos
         args:
           - --force-exclude
           - --hidden
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
         args:
@@ -97,9 +97,10 @@ repos:
         additional_dependencies:
           - prettier@2.8.8
           - "@prettier/plugin-xml@1.1.0"
-        files: \.(xml|svg)$
+        files: \.(xml|svg|xsd)$
         args:
           - --write
+          - --xml-whitespace-sensitivity=ignore
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -119,11 +120,11 @@ repos:
           - --fix=lf
       - id: trailing-whitespace
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.31.2
+    rev: 0.34.0
     hooks:
       - id: check-github-workflows
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
         args:
@@ -134,11 +135,11 @@ repos:
     hooks:
       - id: actionlint
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+    rev: v1.18.2
     hooks:
       - id: mypy
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.0.0
+    rev: v2.15.0
     hooks:
       - id: pretty-format-java
         files: \.(java|vm|vsl)$
