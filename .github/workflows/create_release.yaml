@@ -30,11 +30,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Get version from tag
+        run: echo "JAR_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Publish package to Github Packages
         run: ./gradlew publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JAR_VERSION: ${ GITHUB_REF_NAME#v }
 
       - name: Create GitHub release
         uses: marvinpinto/action-automatic-releases@latest
