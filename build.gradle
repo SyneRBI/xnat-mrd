@@ -245,6 +245,11 @@ task xnatPluginJar(type: Jar) {
     with jar
 }
 
+// Suppress 'enforced-platform' error triggered by publishing to Github Packages.
+// xnat has a dependency on the enforced platform org.nrg:parent
+tasks.withType(GenerateModuleMetadata).configureEach {
+    suppressedValidationErrors.add("enforced-platform")
+}
 
 publishing {
   publications {
