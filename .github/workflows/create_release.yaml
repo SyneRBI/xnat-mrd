@@ -15,10 +15,6 @@ jobs:
       packages: write
 
     steps:
-      - name: Get version number from tag
-        id: get_version
-        uses: battila7/get-version-action@v2
-
       - name: Checkout code
         uses: actions/checkout@v5
         with:
@@ -38,7 +34,7 @@ jobs:
         run: ./gradlew publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JAR_VERSION: ${{ steps.get_version.outputs.version-without-v  }}
+          JAR_VERSION: ${ GITHUB_REF_NAME#v }
 
       - name: Create GitHub release
         uses: marvinpinto/action-automatic-releases@latest
