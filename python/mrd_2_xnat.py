@@ -1,4 +1,6 @@
 import xmlschema
+from typing import Any, Tuple
+import pdb
 
 def get_dict_values(dict, key_list):
     if len(key_list) == 0:
@@ -7,17 +9,24 @@ def get_dict_values(dict, key_list):
         cval = dict[key_list[0]]
         for ind in range(1, len(key_list)):
             cval = cval[key_list[ind]]
-        return (cval)
+        # pdb.set_trace()
+        return cval
 
-def get_main_parameter_groups(ismrmrd_dict):
+
+def get_main_parameter_groups(ismrmrd_dict: dict) -> list:
     xnat_mrd_list = []
     for ckeys in ismrmrd_dict.keys():
-        if '@' not in ckeys and 'userParameter' not in ckeys:
-            xnat_mrd_list.append([ckeys, ])
+        if "@" not in ckeys and "userParameter" not in ckeys:
+            xnat_mrd_list.append(
+                [
+                    ckeys,
+                ]
+            )
     return xnat_mrd_list
 
-def create_list_param_names(xnat_mrd_list, ismrmrd_dict):
-# Go through all parameters and create list of parameter names
+
+def create_list_param_names(xnat_mrd_list: list, ismrmrd_dict: dict) -> list:
+    # Go through all parameters and create list of parameter names
     for knd in range(5):
         flag_finished = True
         xnat_mrd_list_new = []
@@ -27,7 +36,12 @@ def create_list_param_names(xnat_mrd_list, ismrmrd_dict):
                 if isinstance(cvals, dict):
                     flag_finished = False
                     for ckey in cvals.keys():
-                        xnat_mrd_list_new.append(ckey_list + [ckey, ])
+                        xnat_mrd_list_new.append(
+                            ckey_list
+                            + [
+                                ckey,
+                            ]
+                        )
                 else:
                     xnat_mrd_list_new.append(ckey_list)
             else:
@@ -35,122 +49,194 @@ def create_list_param_names(xnat_mrd_list, ismrmrd_dict):
                     if isinstance(cvals[jnd], dict):
                         flag_finished = False
                         for ckey in cvals[jnd].keys():
-                            xnat_mrd_list_new.append(ckey_list + [jnd, ckey, ])
+                            xnat_mrd_list_new.append(
+                                ckey_list
+                                + [
+                                    jnd,
+                                    ckey,
+                                ]
+                            )
                     else:
-                        xnat_mrd_list_new.append(ckey_list + [jnd, ])
+                        xnat_mrd_list_new.append(
+                            ckey_list
+                            + [
+                                jnd,
+                            ]
+                        )
 
         if flag_finished == True:
             break
-        return xnat_mrd_list_new
-    
-def handle_coil_label(xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict):
-    # coilLabel
-    coil_idx = [idx for idx in range(len(xnat_mrd_list)) if xnat_mrd_list[idx][0] == 'acquisitionSystemInformation'
-                and xnat_mrd_list[idx][1] == 'coilLabel' and xnat_mrd_list[idx][3] == 'coilName']
-    num_coils = len(coil_idx)
+        xnat_mrd_list = xnat_mrd_list_new
 
+    return xnat_mrd_list
+
+def handle_coil_label(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict) -> Tuple[list, dict]:
+    # coilLabel
+    coil_idx = [
+        idx
+        for idx in range(len(xnat_mrd_list))
+        if xnat_mrd_list[idx][0] == "acquisitionSystemInformation"
+        and xnat_mrd_list[idx][1] == "coilLabel"
+        and xnat_mrd_list[idx][3] == "coilName"
+    ]
+    
+    num_coils = len(coil_idx)
+    
     coil_label_strg = ''
     for ind in range(num_coils):
         coil_label_strg += (get_dict_values(ismrmrd_dict, xnat_mrd_list[coil_idx[ind]]) + ' ')
 
     if len(coil_label_strg) > 255:
-        coil_label_strg = coil_label_strg[:243] + ' (truncated)'
+        coil_label_strg = coil_label_strg[:243] + " (truncated)"
 
-    xnat_mrd_dict['mrd:mrdScanData/acquisitionSystemInformation/coilLabelList'] = coil_label_strg
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if
-                     elem[0] != 'acquisitionSystemInformation' and elem[1] != 'coilLabel']
+    xnat_mrd_dict["mrd:mrdScanData/acquisitionSystemInformation/coilLabelList"] = (
+        coil_label_strg
+    )
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[0] != "acquisitionSystemInformation" and elem[1] != "coilLabel"
+    ]
 
     return xnat_mrd_list, xnat_mrd_dict
 
-def handle_waveform_info(xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict):
+
+def handle_waveform_info(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict) -> Tuple[list, dict]:
     # waveformInformation
-    waveform_idx = [idx for idx in range(len(xnat_mrd_list)) if xnat_mrd_list[idx][0] == 'waveformInformation'
-                    and xnat_mrd_list[idx][2] == 'waveformType']
+    waveform_idx = [
+        idx
+        for idx in range(len(xnat_mrd_list))
+        if xnat_mrd_list[idx][0] == "waveformInformation"
+        and xnat_mrd_list[idx][2] == "waveformType"
+    ]
     num_waveforms = len(waveform_idx)
 
-    waveform_strg = ''
+    waveform_strg = ""
     for ind in range(num_waveforms):
-        waveform_strg += (get_dict_values(ismrmrd_dict, xnat_mrd_list[waveform_idx[ind]]) + ' ')
+        waveform_strg += (
+            get_dict_values(ismrmrd_dict, xnat_mrd_list[waveform_idx[ind]]) + " "
+        )
 
     if len(waveform_strg) > 255:
-        waveform_strg = waveform_strg[:243] + ' (truncated)'
+        waveform_strg = waveform_strg[:243] + " (truncated)"
 
-    xnat_mrd_dict['mrd:mrdScanData/waveformInformationList'] = waveform_strg
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[0] != 'waveformInformation']
+    xnat_mrd_dict["mrd:mrdScanData/waveformInformationList"] = waveform_strg
+    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[0] != "waveformInformation"]
     return xnat_mrd_list, xnat_mrd_dict
 
-def handle_encoding(xnat_mrd_list):
+
+def handle_encoding(xnat_mrd_list: list) -> list:
     # encoding
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[0] != 'encoding' or elem[1] == 0]
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[:3] != ['encoding', 0, 'trajectoryDescription']]
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[:5] != ['encoding', 0, 'multiband', 'spacing', 'dZ']]
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if
-                     elem[:6] != ['encoding', 0, 'paralellImaging', 'multiband', 'spacing', 'dZ']]
-    
+    xnat_mrd_list = [
+        elem for elem in xnat_mrd_list if elem[0] != "encoding" or elem[1] == 0
+    ]
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[:3] != ["encoding", 0, "trajectoryDescription"]
+    ]
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[:5] != ["encoding", 0, "multiband", "spacing", "dZ"]
+    ]
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[:6] != ["encoding", 0, "paralellImaging", "multiband", "spacing", "dZ"]
+    ]
+
     return xnat_mrd_list
 
-def handle_sequence_params(xnat_mrd_list):
 
+def handle_sequence_params(xnat_mrd_list: list) -> list:
     # sequenceParameters
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[:2] != ['sequenceParameters', 'diffusion']]
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[:2] != ["sequenceParameters", "diffusion"]
+    ]
 
-    single_entries = ['TR', 'TE', 'flipAngle_deg', 'echo_spacing', 'TI']
+    single_entries = ["TR", "TE", "flipAngle_deg", "echo_spacing", "TI"]
     for ind in range(len(single_entries)):
-        xnat_mrd_list = [elem for elem in xnat_mrd_list if
-                         elem[:2] != ['sequenceParameters', single_entries[ind]] or elem[2] == 0]
+        xnat_mrd_list = [
+            elem
+            for elem in xnat_mrd_list
+            if elem[:2] != ["sequenceParameters", single_entries[ind]] or elem[2] == 0
+        ]
 
     return xnat_mrd_list
 
-def handle_meas_info(xnat_mrd_list):
-    
+
+def handle_meas_info(xnat_mrd_list: list) -> list:
     # measurementInformation
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[:2] != ['measurementInformation', 'measurementDependency']
-                     or elem[2] == 0]
-    xnat_mrd_list = [elem for elem in xnat_mrd_list if elem[:2] != ['measurementInformation', 'referencedImageSequence',
-                                                                    'referencedSOPInstanceUID'] or elem[3] == 0]
-    
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[:2] != ["measurementInformation", "measurementDependency"]
+        or elem[2] == 0
+    ]
+    xnat_mrd_list = [
+        elem
+        for elem in xnat_mrd_list
+        if elem[:2]
+        != [
+            "measurementInformation",
+            "referencedImageSequence",
+            "referencedSOPInstanceUID",
+        ]
+        or elem[3] == 0
+    ]
+
     return xnat_mrd_list
 
-def create_final_xnat_mrd_dict(xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict):
+
+def create_final_xnat_mrd_dict(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict) -> dict:
     for ind in range(len(xnat_mrd_list)):
-        ckey = 'mrd:mrdScanData'
+        ckey = "mrd:mrdScanData"
         for jnd in range(len(xnat_mrd_list[ind])):
             if isinstance(xnat_mrd_list[ind][jnd], str):
-                ckey += ('/' + xnat_mrd_list[ind][jnd])
+                ckey += "/" + xnat_mrd_list[ind][jnd]
             # This field seems to be too long for xnat
-            if 'parallelImaging/accelerationFactor/kspace_encoding_step' in ckey:
-                ckey = ckey.replace('kspace_encoding_step', 'kspace_enc_step')
+            if "parallelImaging/accelerationFactor/kspace_encoding_step" in ckey:
+                ckey = ckey.replace("kspace_encoding_step", "kspace_enc_step")
         xnat_mrd_dict[ckey] = get_dict_values(ismrmrd_dict, xnat_mrd_list[ind])
 
+    xnat_mrd_dict["mrd:mrdScanData/acquisitionSystemInformation/coilLabelList"] = "TEMP"
 
-    xnat_mrd_dict['mrd:mrdScanData/acquisitionSystemInformation/coilLabelList'] = 'TEMP'
+    return xnat_mrd_dict
 
-    return (xnat_mrd_dict)
 
-def mrd_2_xnat(ismrmrd_header, xml_scheme_filename):
+def mrd_2_xnat(ismrmrd_header: bytes, xml_scheme_filename: str) -> dict:
+    pdb.set_trace()
     xml_schema = xmlschema.XMLSchema(xml_scheme_filename)
 
-    assert xml_schema.is_valid(ismrmrd_header), 'Raw data file is not a valid ismrmrd file'
+    assert xml_schema.is_valid(ismrmrd_header), (
+        "Raw data file is not a valid ismrmrd file"
+    )
 
     ismrmrd_dict = xml_schema.to_dict(ismrmrd_header)
-    
+
     xnat_mrd_list = get_main_parameter_groups(ismrmrd_dict)
-    
-    xnat_mrd_list =create_list_param_names(xnat_mrd_list, ismrmrd_dict)
+
+    xnat_mrd_list = create_list_param_names(xnat_mrd_list, ismrmrd_dict)
 
     # Create dictionary with parameter names and their values
     xnat_mrd_dict = {}
-    xnat_mrd_dict['scans'] = 'mrd:mrdScanData'
+    xnat_mrd_dict["scans"] = "mrd:mrdScanData"
 
     # First deal with special cases
-    xnat_mrd_list, xnat_mrd_dict = handle_coil_label(xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict)
-    
-    xnat_mrd_list, xnat_mrd_dict = handle_waveform_info(xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict)
-    
+    xnat_mrd_list, xnat_mrd_dict = handle_coil_label(
+        xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict
+    )
+
+    xnat_mrd_list, xnat_mrd_dict = handle_waveform_info(
+        xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict
+    )
+
     xnat_mrd_list = handle_encoding(xnat_mrd_list)
-    
     xnat_mrd_list = handle_sequence_params(xnat_mrd_list)
-    
+
     xnat_mrd_list = handle_meas_info(xnat_mrd_list)
-    
+
     return create_final_xnat_mrd_dict(xnat_mrd_list, ismrmrd_dict, xnat_mrd_dict)
