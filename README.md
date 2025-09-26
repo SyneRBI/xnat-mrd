@@ -32,22 +32,29 @@ before building again with
 ## Creating a new release
 
 Create a new tag in the form `vX.Y.Z` and push it to the repository e.g.
+
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
 This will trigger a github actions workflow creating:
-- a new Github release with `.jar` attached
-- a new package on [Github packages](https://github.com/orgs/SyneRBI/packages?repo_name=xnat-mrd)
 
-For information about how to use this package as a dependency, see the github docs for 
-[maven](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry#installing-a-package) 
-or [gradle](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package).
+- a new Github release with `.jar` attached
+- a new package on
+  [Github packages](https://github.com/orgs/SyneRBI/packages?repo_name=xnat-mrd)
+
+For information about how to use this package as a dependency, see the github
+docs for
+[maven](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry#installing-a-package)
+or
+[gradle](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package).
 
 ## Running pre-commit
 
-**Prerequisites:** Java version 11 or greater is required to run pre-commit. If you encounter issues, installing the latest Azul Zulu OpenJDK should resolve them.
+**Prerequisites:** Java version 11 or greater is required to run pre-commit. If
+you encounter issues, installing the latest Azul Zulu OpenJDK should resolve
+them.
 
 To set up and run pre-commit:
 
