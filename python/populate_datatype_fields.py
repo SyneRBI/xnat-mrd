@@ -49,34 +49,9 @@ def create_unique_subject(
         logger.error(f"Subject {subject_id} already exists")
         raise NameError(f"Subject {subject_id} already exists.")
 
-    # Create subject using REST API - PUT method as per XNAT documentation
-    # PUT /data/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}?label={SUBJECT_LABEL}
-    session.put(
-        f"/data/projects/{xnat_project.id}/subjects/{subject_id}",
-        query={"label": subject_id},
-    )
-
-    # Get the created subject from the project
-    # After creation, we can access it through the collection
-    import time
-
-    time.sleep(0.5)  # Brief pause to ensure creation is complete
-
-    try:
-        xnat_subject = xnat_project.subjects[subject_id]
-    except KeyError:
-        # If still not available, create a minimal subject proxy
-        xnat_subject = type(
-            "Subject",
-            (),
-            {
-                "label": subject_id,
-                "id": subject_id,
-                "parent": xnat_project,
-                "xnat_session": session,
-                "experiments": type("Experiments", (), {"values": lambda: []})(),
-            },
-        )()
+    # Create subject using the proper XNAT object creation method
+    # As per documentation: session.classes.SubjectData(parent=project, label='new_subject_label')
+    xnat_subject = session.classes.SubjectData(parent=xnat_project, label=subject_id)
 
     subject_list.append(subject_id)
     logger.info(f"Created subject: {subject_id}")
@@ -85,21 +60,24 @@ def create_unique_subject(
 
 
 def add_exam(xnat_subject: Any, time_id: str, experiment_date: str) -> Any:
-    """Add exam/experiment to the XNAT subject - disconnect if experiment already exists"""
-    # Add exam
+    """Add exam/experiment to the XNAT subject"""
     experiment_id = "Exp-" + time_id
-    experiment = xnat_subject.experiments[experiment_id]
-    if experiment.exists():
+
+    # Check if experiment already exists
+    existing_experiments = list(xnat_subject.experiments.values())
+    existing_experiment_labels = [exp.label for exp in existing_experiments]
+
+    if experiment_id in existing_experiment_labels:
         logger.error(f"Exam {experiment_id} already exists")
         raise NameError(f"Exam {experiment_id} already exists.")
-    else:
-        experiment.create(
-            **{
-                "experiments": "xnat:mrSessionData",
-                "xnat:mrSessionData/date": experiment_date,
-            }
-        )
-        logger.info(f"Created experiment: {experiment_id}")
+
+    # Create experiment using the proper XNAT object creation method
+    # session.classes.MrSessionData(parent=subject, label='new_experiment_label')
+    session = xnat_subject.xnat_session
+    experiment = session.classes.MrSessionData(parent=xnat_subject, label=experiment_id)
+    experiment.date = experiment_date
+
+    logger.info(f"Created experiment: {experiment_id}")
     return experiment
 
 
@@ -113,7 +91,7 @@ def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> No
         scan_id (str): custom str e.g. cart_cine_scan
         mrd_file (str): _description_
     """
-    scan = experiment.scan(scan_id)
+    scan = experiment.scans[scan_id]
     if scan.exists():
         logger.warning(f"XNAT scan {scan_id} already exists")
     else:
