@@ -31,7 +31,9 @@ before building again with
 
 ## Running pre-commit
 
-**Prerequisites:** Java version 11 or greater is required to run pre-commit. If you encounter issues, installing the latest Azul Zulu OpenJDK should resolve them.
+**Prerequisites:** Java version 11 or greater is required to run pre-commit. If
+you encounter issues, installing the latest Azul Zulu OpenJDK should resolve
+them.
 
 To set up and run pre-commit:
 
@@ -55,12 +57,13 @@ pre-commit uninstall
 
 ## Requirements
 
-If using uv then you can take advantage of the inline requirements at the top of populate_datatype_fields.py by running:
+If using uv then you can take advantage of the inline requirements at the top of
+populate_datatype_fields.py by running:
 
 ```shell
 
 uv run populate_datatype_fields.py
 ```
 
-However, the `requirements.txt` file is still available if running the code
-as normal with python.
+However, the `requirements.txt` file is still available if running the code as
+normal with python.
