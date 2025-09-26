@@ -1,3 +1,12 @@
+# /// script
+# requires-python = ">=3.8"
+# dependencies = [
+#     "xnat==0.7.2",
+#     "ismrmrd==1.14.2",
+#     "xmlschema==4.1.0",
+# ]
+# ///
+
 import xnat
 from pathlib import Path
 from datetime import datetime
