@@ -131,7 +131,12 @@ def handle_waveform_info(
 
 
 def handle_encoding(xnat_mrd_list: list) -> list:
-    # encoding
+    """
+    Filter out unwanted encoding parameters from xnat_mrd_list.
+
+    This function removes specific encoding-related parameters that should not be
+    included in the final XNAT data.
+    """
     xnat_mrd_list = [
         elem for elem in xnat_mrd_list if elem[0] != "encoding" or elem[1] == 0
     ]
@@ -155,26 +160,40 @@ def handle_encoding(xnat_mrd_list: list) -> list:
 
 
 def handle_sequence_params(xnat_mrd_list: list) -> list:
-    # sequenceParameters
+    """
+    Filter out unwanted sequence parameters from xnat_mrd_list.
+
+    This function removes diffusion parameters entirely and keeps only the first
+    entry (index 0) for specific single-value sequence parameters.
+    """
+    # Remove diffusion parameters entirely
     xnat_mrd_list = [
         elem
         for elem in xnat_mrd_list
         if elem[:2] != ["sequenceParameters", "diffusion"]
     ]
 
+    # Keep only first entry (index 0) for single-value parameters
     single_entries = ["TR", "TE", "flipAngle_deg", "echo_spacing", "TI"]
-    for ind in range(len(single_entries)):
+    for entry in single_entries:
         xnat_mrd_list = [
             elem
             for elem in xnat_mrd_list
-            if elem[:2] != ["sequenceParameters", single_entries[ind]] or elem[2] == 0
+            if elem[:2] != ["sequenceParameters", entry] or elem[2] == 0
         ]
 
     return xnat_mrd_list
 
 
 def handle_meas_info(xnat_mrd_list: list) -> list:
-    # measurementInformation
+    """
+    Filter out unwanted measurement info from xnat_mrd_list.
+
+    This function removes redundant measurement information entries and keeps only the
+    first entry (index 0) for parameters that typically have multiple instances but
+    where only the first instance is needed.
+
+    """
     xnat_mrd_list = [
         elem
         for elem in xnat_mrd_list
