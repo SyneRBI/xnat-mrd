@@ -1,5 +1,6 @@
 .gradle
 .idea
+.vscode
 /build/
 
 # Ignore Gradle GUI config
@@ -13,3 +14,6 @@ gradle-app.setting
 
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
+
+# Python-related files
+__pycache__/
