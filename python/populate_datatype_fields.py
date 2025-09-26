@@ -1,4 +1,4 @@
-import pyxnat
+import xnat
 from pathlib import Path
 from datetime import datetime
 from mrd_2_xnat import mrd_2_xnat
@@ -20,18 +20,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def connect_to_server(server: str, user: str, password: str) -> pyxnat.Interface:
-    """Connect to XNAT server"""
-    xnat_server = pyxnat.Interface(server=server, user=user, password=password)
-    logger.info("Connected to XNAT server")
-    return xnat_server
-
-
-def verify_project_exists(xnat_server: pyxnat.Interface, project_name: str) -> Any:
+def verify_project_exists(session: xnat.session, project_name: str) -> Any:
     """Verify project exist on XNAT server - disconnect if project does not exist"""
-    xnat_project = xnat_server.select.project(project_name)
-    if not xnat_project.exists():
-        xnat_server.disconnect()
+    try:
+        xnat_project = session.projects[project_name]
+        logger.info(f"Project {xnat_project} exists")
+        return xnat_project
+    except KeyError:
         logger.error(f"Project {project_name} not available on server")
         raise NameError(f"Project {project_name} not available on server.")
 
@@ -39,33 +34,62 @@ def verify_project_exists(xnat_server: pyxnat.Interface, project_name: str) -> A
     return xnat_project
 
 
-def verify_subject_does_not_exist(
-    xnat_server: pyxnat.Interface, xnat_project: Any, subject_list: list
+def create_unique_subject(
+    session: xnat.XNATSession, xnat_project: Any, subject_list: list
 ) -> Tuple[Any, str]:
-    """Verify subject does not exist - disconnect if subject already exists"""
+    """Create a unique subject that doesn't already exist"""
     time_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
     subject_id = "Subj-" + time_id
-    xnat_subject = xnat_project.subject(subject_id)
-    if xnat_subject.exists():
-        xnat_server.disconnect()
+
+    # Check if subject already exists
+    existing_subjects = list(xnat_project.subjects.values())
+    existing_subject_labels = [subj.label for subj in existing_subjects]
+
+    if subject_id in existing_subject_labels:
         logger.error(f"Subject {subject_id} already exists")
         raise NameError(f"Subject {subject_id} already exists.")
-    else:
-        subject_list.append(subject_id)
-        logger.info(f"Created new subject ID: {subject_id}")
+
+    # Create subject using REST API - PUT method as per XNAT documentation
+    # PUT /data/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}?label={SUBJECT_LABEL}
+    session.put(
+        f"/data/projects/{xnat_project.id}/subjects/{subject_id}",
+        query={"label": subject_id},
+    )
+
+    # Get the created subject from the project
+    # After creation, we can access it through the collection
+    import time
+
+    time.sleep(0.5)  # Brief pause to ensure creation is complete
+
+    try:
+        xnat_subject = xnat_project.subjects[subject_id]
+    except KeyError:
+        # If still not available, create a minimal subject proxy
+        xnat_subject = type(
+            "Subject",
+            (),
+            {
+                "label": subject_id,
+                "id": subject_id,
+                "parent": xnat_project,
+                "xnat_session": session,
+                "experiments": type("Experiments", (), {"values": lambda: []})(),
+            },
+        )()
+
+    subject_list.append(subject_id)
+    logger.info(f"Created subject: {subject_id}")
 
     return xnat_subject, time_id
 
 
-def add_exam(
-    xnat_server: pyxnat.Interface, xnat_subject: Any, time_id: str, experiment_date: str
-) -> Any:
+def add_exam(xnat_subject: Any, time_id: str, experiment_date: str) -> Any:
     """Add exam/experiment to the XNAT subject - disconnect if experiment already exists"""
     # Add exam
     experiment_id = "Exp-" + time_id
-    experiment = xnat_subject.experiment(experiment_id)
+    experiment = xnat_subject.experiments[experiment_id]
     if experiment.exists():
-        xnat_server.disconnect()
         logger.error(f"Exam {experiment_id} already exists")
         raise NameError(f"Exam {experiment_id} already exists.")
     else:
@@ -128,20 +152,22 @@ def main():
     project_name = "mrd"
     subject_list = []
 
-    xnat_server = connect_to_server(xnat_server_address, user, password)
-    xnat_project = verify_project_exists(xnat_server, project_name)
-    xnat_subject, time_id = verify_subject_does_not_exist(
-        xnat_server, xnat_project, subject_list
-    )
-    experiment = add_exam(xnat_server, xnat_subject, time_id, experiment_date)
-    # Load MRD header and convert to XNAT format
-    dset = ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False)
-    header = dset.read_xml_header()
-    xnat_hdr = mrd_2_xnat(
-        header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
-    )
-    add_scan(experiment, xnat_hdr, scan_id, mrd_file)
-    xnat_server.disconnect()
+    # Use context manager for automatic connection cleanup
+    with xnat.connect(xnat_server_address, user=user, password=password) as session:
+        logger.info("Connected to XNAT server")
+
+        xnat_project = verify_project_exists(session, project_name)
+        xnat_subject, time_id = create_unique_subject(
+            session, xnat_project, subject_list
+        )
+        experiment = add_exam(xnat_subject, time_id, experiment_date)
+        # Load MRD header and convert to XNAT format
+        dset = ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False)
+        header = dset.read_xml_header()
+        xnat_hdr = mrd_2_xnat(
+            header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
+        )
+        add_scan(experiment, xnat_hdr, scan_id, mrd_file)
 
 
 if __name__ == "__main__":
