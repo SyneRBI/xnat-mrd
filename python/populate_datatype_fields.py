@@ -91,49 +91,42 @@ def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> No
         scan_id (str): custom str e.g. cart_cine_scan
         mrd_file (str): _description_
     """
-    # Check if scan already exists, otherwise create it
+    # Check if scan already exists, otherwise create it with all header data
     if scan_id in experiment.scans:
         logger.warning(f"XNAT scan {scan_id} already exists")
         scan = experiment.scans[scan_id]
     else:
-        # Create new scan with MRD-specific type using xnat package
+        # Create the scan with all MRD header data at once
+        logger.info(f"Creating MRD scan {scan_id} with header data")
+
+        # Use the xnat library's proper method for creating scans with data
         session = experiment.xnat_session
+        scan_uri = f"{experiment.uri}/scans/{scan_id}"
 
-        # Try different scan data classes, prioritizing MRD-specific ones
-        scan = None
-        scan_classes_to_try = [
-            "MrdMrdScanData",
-            "MrdScanData",
-            "MrScanData",
-            "RtImageScanData",
-            "ImageScanData",
-        ]
+        # Create the scan using PUT request with all header data as query parameters
+        response = session.put(scan_uri, query=xnat_hdr)
 
-        for scan_class_name in scan_classes_to_try:
+        if response.ok:
+            logger.info(f"Successfully created MRD scan: {scan_id}")
+            # Refresh the experiment to see the new scan
+            experiment.clearcache()
+
+            # Get the created scan object
             try:
-                scan_class = getattr(session.classes, scan_class_name)
-                scan = scan_class(parent=experiment, id=scan_id)
-                logger.info(
-                    f"Successfully created scan using {scan_class_name}: {scan_id}"
+                scan = experiment.scans[scan_id]
+            except KeyError:
+                # If scan still not found, it might need more time or different approach
+                logger.warning(
+                    f"Scan {scan_id} created but not immediately available, trying alternative approach"
                 )
-                break
-            except AttributeError:
-                logger.debug(f"Class {scan_class_name} not available")
-                continue
-
-        if scan is None:
-            raise Exception(
-                f"Could not find suitable scan class among: {scan_classes_to_try}"
+                # Fall back to creating scan object directly
+                session = experiment.xnat_session
+                scan = session.classes.MrdMrdScanData(parent=experiment, id=scan_id)
+        else:
+            logger.error(
+                f"Failed to create scan: {response.status_code} - {response.text}"
             )
-
-        # Set scan properties from header
-        for key, value in xnat_hdr.items():
-            if hasattr(scan, key):
-                setattr(scan, key, value)
-
-        # Try to set the datatype to MRD if possible
-        if hasattr(scan, "type"):
-            scan.type = "MRD"
+            raise Exception(f"Failed to create MRD scan: {response.status_code}")
 
         logger.info(f"Configured MRD scan: {scan_id}")
 
