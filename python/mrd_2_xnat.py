@@ -65,20 +65,26 @@ def create_list_param_names(xnat_mrd_list: list, ismrmrd_dict: dict) -> list:
 def handle_coil_label(
     xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
 ) -> Tuple[list, dict]:
-    # coilLabel
+    """
+    Process and consolidate coil label information from ismrmrd_dict.
+
+    This function extracts coil names from the acquisitionSystemInformation header,
+    concatenates them into a single string, and stores it in xnat_mrd_dict.
+    It also removes the individual coil label entries from the parameter list to
+    avoid duplication.
+    """
     coil_idx = [
         idx
-        for idx in range(len(xnat_mrd_list))
-        if xnat_mrd_list[idx][0] == "acquisitionSystemInformation"
-        and xnat_mrd_list[idx][1] == "coilLabel"
-        and xnat_mrd_list[idx][3] == "coilName"
+        for idx, item in enumerate(xnat_mrd_list)
+        if (len(item)) > 3
+        and item[0] == "acquisitionSystemInformation"
+        and item[1] == "coilLabel"
+        and item[3] == "coilName"
     ]
 
-    num_coils = len(coil_idx)
-
     coil_label_strg = ""
-    for ind in range(num_coils):
-        coil_value = get_dict_values(ismrmrd_dict, xnat_mrd_list[coil_idx[ind]])
+    for idx in coil_idx:
+        coil_value = get_dict_values(ismrmrd_dict, xnat_mrd_list[idx])
         coil_label_strg += str(coil_value) + " "
 
     if len(coil_label_strg) > 255:
@@ -99,18 +105,21 @@ def handle_coil_label(
 def handle_waveform_info(
     xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
 ) -> Tuple[list, dict]:
-    # waveformInformation
+    """
+    Process and consolidate waveform information from ismrmrd_dict.
+
+    This function extracts waveform types from the waveformInformation header,
+    concatenates them into a single string, and stores it in xnat_mrd_dict.
+    """
     waveform_idx = [
         idx
-        for idx in range(len(xnat_mrd_list))
-        if xnat_mrd_list[idx][0] == "waveformInformation"
-        and xnat_mrd_list[idx][2] == "waveformType"
+        for idx, item in enumerate(xnat_mrd_list)
+        if item[0] == "waveformInformation" and item[2] == "waveformType"
     ]
-    num_waveforms = len(waveform_idx)
 
     waveform_strg = ""
-    for ind in range(num_waveforms):
-        waveform_value = get_dict_values(ismrmrd_dict, xnat_mrd_list[waveform_idx[ind]])
+    for idx in waveform_idx:
+        waveform_value = get_dict_values(ismrmrd_dict, xnat_mrd_list[idx])
         waveform_strg += str(waveform_value) + " "
 
     if len(waveform_strg) > 255:
