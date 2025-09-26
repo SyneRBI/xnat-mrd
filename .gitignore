@@ -17,3 +17,6 @@ gradle-app.setting
 
 # Python-related files
 __pycache__/
+
+# Log files
+.log
