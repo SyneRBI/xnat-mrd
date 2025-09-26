@@ -1,6 +1,5 @@
 import xmlschema
 from typing import Any, Tuple, Optional
-import pdb
 
 
 def get_dict_values(dict: dict, key_list: list) -> Optional[Any]:
@@ -218,15 +217,22 @@ def handle_meas_info(xnat_mrd_list: list) -> list:
 def create_final_xnat_mrd_dict(
     xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
 ) -> dict:
-    for ind in range(len(xnat_mrd_list)):
-        ckey = "mrd:mrdScanData"
-        for jnd in range(len(xnat_mrd_list[ind])):
-            if isinstance(xnat_mrd_list[ind][jnd], str):
-                ckey += "/" + xnat_mrd_list[ind][jnd]
-            # This field seems to be too long for xnat
-            if "parallelImaging/accelerationFactor/kspace_encoding_step" in ckey:
-                ckey = ckey.replace("kspace_encoding_step", "kspace_enc_step")
-        xnat_mrd_dict[ckey] = get_dict_values(ismrmrd_dict, xnat_mrd_list[ind])
+    """
+    Create final xnat_mrd_dict by building parameter paths and extracting values.
+
+    Converts parameter paths to XNAT-compatible key strings and retrieves corresponding
+    values from the ismrmrd_dict. Handles XNAT field length limitations.
+    """
+    for param_path in xnat_mrd_list:
+        # Build XNAT key path
+        key_parts = ["mrd:mrdScanData"]
+        key_parts.extend(str(part) for part in param_path if isinstance(part, str))
+        ckey = "/".join(key_parts)
+
+        # This field seems to be too long for xnat
+        if "parallelImaging/accelerationFactor/kspace_encoding_step" in ckey:
+            ckey = ckey.replace("kspace_encoding_step", "kspace_enc_step")
+        xnat_mrd_dict[ckey] = get_dict_values(ismrmrd_dict, param_path)
 
     xnat_mrd_dict["mrd:mrdScanData/acquisitionSystemInformation/coilLabelList"] = "TEMP"
 
@@ -248,8 +254,6 @@ def check_header_valid_convert_to_dict(
 
 
 def mrd_2_xnat(ismrmrd_header: bytes, xml_scheme_filename: str) -> dict:
-    pdb.set_trace()
-
     ismrmrd_dict = check_header_valid_convert_to_dict(
         xml_scheme_filename, ismrmrd_header
     )

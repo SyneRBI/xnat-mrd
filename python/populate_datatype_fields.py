@@ -4,7 +4,6 @@ from datetime import datetime
 from mrd_2_xnat import mrd_2_xnat
 import os
 import ismrmrd
-import pdb
 import logging
 from typing import Any, Tuple
 
@@ -141,8 +140,6 @@ def main():
     xnat_hdr = mrd_2_xnat(
         header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
     )
-    pdb.set_trace()
-    print(str(mrd_file))
     add_scan(experiment, xnat_hdr, scan_id, mrd_file)
     xnat_server.disconnect()
 
