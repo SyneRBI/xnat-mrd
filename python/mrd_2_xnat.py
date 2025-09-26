@@ -1,19 +1,23 @@
 import xmlschema
-from typing import Any, Tuple
+from typing import Any, Tuple, Optional
 import pdb
 
-def get_dict_values(dict, key_list):
-    if len(key_list) == 0:
-        return None
+
+def get_dict_values(dict: dict, key_list: list) -> Optional[Any]:
+    """Given a dictionary and a list of keys, a new filtered
+    dictionary is returned"""
+    if key_list:
+        result = dict
+        for key in key_list:
+            result = result[key]
+        return result
     else:
-        cval = dict[key_list[0]]
-        for ind in range(1, len(key_list)):
-            cval = cval[key_list[ind]]
-        # pdb.set_trace()
-        return cval
+        return None
 
 
 def get_main_parameter_groups(ismrmrd_dict: dict) -> list:
+    """Given a dictionary, pull out the main parameter groups i.e. keys and
+    return in a list"""
     xnat_mrd_list = []
     for ckeys in ismrmrd_dict.keys():
         if "@" not in ckeys and "userParameter" not in ckeys:
@@ -26,51 +30,41 @@ def get_main_parameter_groups(ismrmrd_dict: dict) -> list:
 
 
 def create_list_param_names(xnat_mrd_list: list, ismrmrd_dict: dict) -> list:
-    # Go through all parameters and create list of parameter names
-    for knd in range(5):
+    """Given a dictionary with info from DICOM headers and a list of main parameter groups
+    return a list of parameter names nested within main parameter groups"""
+    for _ in range(5):
         flag_finished = True
         xnat_mrd_list_new = []
         for ckey_list in xnat_mrd_list:
             cvals = get_dict_values(ismrmrd_dict, ckey_list)
-            if not isinstance(cvals, list):
-                if isinstance(cvals, dict):
-                    flag_finished = False
-                    for ckey in cvals.keys():
-                        xnat_mrd_list_new.append(
-                            ckey_list
-                            + [
-                                ckey,
-                            ]
+            if isinstance(cvals, dict):
+                flag_finished = False
+                xnat_mrd_list_new.extend([ckey_list + [ckey] for ckey in cvals.keys()])
+            elif isinstance(cvals, list):
+                list_had_dicts = False
+                for idx, item in enumerate(cvals):
+                    if isinstance(item, dict):
+                        list_had_dicts = True
+                        xnat_mrd_list_new.extend(
+                            [ckey_list + [idx, ckey] for ckey in item.keys()]
                         )
-                else:
-                    xnat_mrd_list_new.append(ckey_list)
-            else:
-                for jnd in range(len(cvals)):
-                    if isinstance(cvals[jnd], dict):
-                        flag_finished = False
-                        for ckey in cvals[jnd].keys():
-                            xnat_mrd_list_new.append(
-                                ckey_list
-                                + [
-                                    jnd,
-                                    ckey,
-                                ]
-                            )
                     else:
-                        xnat_mrd_list_new.append(
-                            ckey_list
-                            + [
-                                jnd,
-                            ]
-                        )
+                        xnat_mrd_list_new.append(ckey_list + [idx])
+                if list_had_dicts:
+                    flag_finished = False
+            else:
+                xnat_mrd_list_new.append(ckey_list)
 
-        if flag_finished == True:
+        if flag_finished:
             break
         xnat_mrd_list = xnat_mrd_list_new
 
     return xnat_mrd_list
 
-def handle_coil_label(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict) -> Tuple[list, dict]:
+
+def handle_coil_label(
+    xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
+) -> Tuple[list, dict]:
     # coilLabel
     coil_idx = [
         idx
@@ -79,12 +73,13 @@ def handle_coil_label(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: di
         and xnat_mrd_list[idx][1] == "coilLabel"
         and xnat_mrd_list[idx][3] == "coilName"
     ]
-    
+
     num_coils = len(coil_idx)
-    
-    coil_label_strg = ''
+
+    coil_label_strg = ""
     for ind in range(num_coils):
-        coil_label_strg += (get_dict_values(ismrmrd_dict, xnat_mrd_list[coil_idx[ind]]) + ' ')
+        coil_value = get_dict_values(ismrmrd_dict, xnat_mrd_list[coil_idx[ind]])
+        coil_label_strg += str(coil_value) + " "
 
     if len(coil_label_strg) > 255:
         coil_label_strg = coil_label_strg[:243] + " (truncated)"
@@ -101,7 +96,9 @@ def handle_coil_label(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: di
     return xnat_mrd_list, xnat_mrd_dict
 
 
-def handle_waveform_info(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict) -> Tuple[list, dict]:
+def handle_waveform_info(
+    xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
+) -> Tuple[list, dict]:
     # waveformInformation
     waveform_idx = [
         idx
@@ -113,9 +110,8 @@ def handle_waveform_info(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict:
 
     waveform_strg = ""
     for ind in range(num_waveforms):
-        waveform_strg += (
-            get_dict_values(ismrmrd_dict, xnat_mrd_list[waveform_idx[ind]]) + " "
-        )
+        waveform_value = get_dict_values(ismrmrd_dict, xnat_mrd_list[waveform_idx[ind]])
+        waveform_strg += str(waveform_value) + " "
 
     if len(waveform_strg) > 255:
         waveform_strg = waveform_strg[:243] + " (truncated)"
@@ -143,7 +139,7 @@ def handle_encoding(xnat_mrd_list: list) -> list:
     xnat_mrd_list = [
         elem
         for elem in xnat_mrd_list
-        if elem[:6] != ["encoding", 0, "paralellImaging", "multiband", "spacing", "dZ"]
+        if elem[:6] != ["encoding", 0, "parallelImaging", "multiband", "spacing", "dZ"]
     ]
 
     return xnat_mrd_list
@@ -191,7 +187,9 @@ def handle_meas_info(xnat_mrd_list: list) -> list:
     return xnat_mrd_list
 
 
-def create_final_xnat_mrd_dict(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict) -> dict:
+def create_final_xnat_mrd_dict(
+    xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
+) -> dict:
     for ind in range(len(xnat_mrd_list)):
         ckey = "mrd:mrdScanData"
         for jnd in range(len(xnat_mrd_list[ind])):
@@ -207,15 +205,26 @@ def create_final_xnat_mrd_dict(xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd
     return xnat_mrd_dict
 
 
-def mrd_2_xnat(ismrmrd_header: bytes, xml_scheme_filename: str) -> dict:
-    pdb.set_trace()
+def check_header_valid_convert_to_dict(
+    xml_scheme_filename: str, ismrmrd_header: bytes
+) -> dict:
+    """User xmlschema package to read in xml_scheme_filename as xmlschema object and check
+    mrd_header is valid before converting the header to a dictionary and returning"""
     xml_schema = xmlschema.XMLSchema(xml_scheme_filename)
 
     assert xml_schema.is_valid(ismrmrd_header), (
         "Raw data file is not a valid ismrmrd file"
     )
 
-    ismrmrd_dict = xml_schema.to_dict(ismrmrd_header)
+    return xml_schema.to_dict(ismrmrd_header)
+
+
+def mrd_2_xnat(ismrmrd_header: bytes, xml_scheme_filename: str) -> dict:
+    pdb.set_trace()
+
+    ismrmrd_dict = check_header_valid_convert_to_dict(
+        xml_scheme_filename, ismrmrd_header
+    )
 
     xnat_mrd_list = get_main_parameter_groups(ismrmrd_dict)
 
