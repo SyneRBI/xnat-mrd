@@ -29,7 +29,7 @@ def connect_to_server(server: str, user: str, password: str) -> pyxnat.Interface
 
 
 def verify_project_exists(xnat_server: pyxnat.Interface, project_name: str) -> Any:
-    # Verify project exists
+    """Verify project exist on XNAT server - disconnect if project does not exist"""
     xnat_project = xnat_server.select.project(project_name)
     if not xnat_project.exists():
         xnat_server.disconnect()
@@ -43,7 +43,7 @@ def verify_project_exists(xnat_server: pyxnat.Interface, project_name: str) -> A
 def verify_subject_does_not_exist(
     xnat_server: pyxnat.Interface, xnat_project: Any, subject_list: list
 ) -> Tuple[Any, str]:
-    # Verify subject does not exist
+    """Verify subject does not exist - disconnect if subject already exists"""
     time_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
     subject_id = "Subj-" + time_id
     xnat_subject = xnat_project.subject(subject_id)
@@ -61,10 +61,11 @@ def verify_subject_does_not_exist(
 def add_exam(
     xnat_server: pyxnat.Interface, xnat_subject: Any, time_id: str, experiment_date: str
 ) -> Any:
+    """Add exam/experiment to the XNAT subject - disconnect if experiment already exists"""
     # Add exam
     experiment_id = "Exp-" + time_id
     experiment = xnat_subject.experiment(experiment_id)
-    if xnat_subject.exists():
+    if experiment.exists():
         xnat_server.disconnect()
         logger.error(f"Exam {experiment_id} already exists")
         raise NameError(f"Exam {experiment_id} already exists.")
@@ -80,7 +81,15 @@ def add_exam(
 
 
 def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> None:
-    # Add scan
+    """Add scan to experiment. Create scan with the xnat_hdr info. Add MR_RAW resource
+    to scan with mrd_file data.
+
+    Args:
+        experiment (Any): existing XNAT experiment
+        xnat_hdr (dict): dict containing all the header info to populate in the data type mrd
+        scan_id (str): custom str e.g. cart_cine_scan
+        mrd_file (str): _description_
+    """
     scan = experiment.scan(scan_id)
     if scan.exists():
         logger.warning(f"XNAT scan {scan_id} already exists")
