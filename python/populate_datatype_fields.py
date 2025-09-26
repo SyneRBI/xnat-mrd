@@ -91,19 +91,55 @@ def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> No
         scan_id (str): custom str e.g. cart_cine_scan
         mrd_file (str): _description_
     """
-    scan = experiment.scans[scan_id]
-    if scan.exists():
+    # Check if scan already exists, otherwise create it
+    if scan_id in experiment.scans:
         logger.warning(f"XNAT scan {scan_id} already exists")
+        scan = experiment.scans[scan_id]
     else:
-        scan.create(**xnat_hdr)
-        scan_resource = scan.resource("MR_RAW")
-        scan_resource.put(
-            (mrd_file,),
-            format="HDF5",
-            label="MR_RAW",
-            content="RAW",
-            **{"xsi:type": "xnat:mrScanData"},
-        )
+        # Create new scan with MRD-specific type using xnat package
+        session = experiment.xnat_session
+
+        # Try different scan data classes, prioritizing MRD-specific ones
+        scan = None
+        scan_classes_to_try = [
+            "MrdMrdScanData",
+            "MrdScanData",
+            "MrScanData",
+            "RtImageScanData",
+            "ImageScanData",
+        ]
+
+        for scan_class_name in scan_classes_to_try:
+            try:
+                scan_class = getattr(session.classes, scan_class_name)
+                scan = scan_class(parent=experiment, id=scan_id)
+                logger.info(
+                    f"Successfully created scan using {scan_class_name}: {scan_id}"
+                )
+                break
+            except AttributeError:
+                logger.debug(f"Class {scan_class_name} not available")
+                continue
+
+        if scan is None:
+            raise Exception(
+                f"Could not find suitable scan class among: {scan_classes_to_try}"
+            )
+
+        # Set scan properties from header
+        for key, value in xnat_hdr.items():
+            if hasattr(scan, key):
+                setattr(scan, key, value)
+
+        # Try to set the datatype to MRD if possible
+        if hasattr(scan, "type"):
+            scan.type = "MRD"
+
+        logger.info(f"Configured MRD scan: {scan_id}")
+
+        # Create resource for MRD files - create the resource first, then upload
+        scan_resource = scan.create_resource("MR_RAW")
+        scan_resource.upload(mrd_file, os.path.basename(mrd_file))
         logger.info(f"Successfully created scan {scan_id} and uploaded MRD file")
 
 
