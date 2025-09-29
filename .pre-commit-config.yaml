@@ -146,4 +146,3 @@ repos:
         args:
           - --aosp
           - --autofix
-          - --skip-exit-code-check
