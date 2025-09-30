@@ -1,3 +1,4 @@
 pytest
 xnat
 xnat4tests
+types-requests

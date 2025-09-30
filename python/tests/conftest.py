@@ -5,28 +5,13 @@ from xnat4tests import Config
 import os
 import pytest
 import xnat4tests
+import time
+import requests
 
 
 @pytest.fixture(scope="session")
 def xnat_config():
     tmp_dir = Path(tempfile.mkdtemp())
-    config = Config.load("default")
-    print(config)
-    config.xnat_root_dir = tmp_dir
-    config.build_args = (
-        {
-            "xnat_version": "1.8.3",
-            "xnat_cs_plugin_version": "3.2.0",
-        },
-    )
-    config.xnat_mnt_dirs = [
-        "home/logs",
-        "home/work",
-        "build",
-        "archive",
-        "prearchive",
-        "home/plugins",
-    ]
 
     return Config(
         xnat_root_dir=tmp_dir,
@@ -52,5 +37,24 @@ def xnat_uri(xnat_config):
         f"docker cp {source_path} xnat_mrd_xnat4tests:{plugin_path / 'mrd-xpl.jar'}",
         shell=True,
     )
+    xnat4tests.restart_xnat(xnat_config)
+    subprocess.call(
+        "docker exec xnat_mrd_xnat4tests ls -la /data/xnat/home/plugins/",
+        shell=True,
+    )
+
+    # Wait for XNAT to be available
+    xnat_url = xnat_config.xnat_uri
+    for _ in range(60):  # Wait up to 60 seconds
+        try:
+            r = requests.get(xnat_url)
+            if r.status_code == 200:
+                print("XNAT is up!")
+                break
+        except Exception:
+            pass
+        time.sleep(2)
+    else:
+        raise RuntimeError("XNAT did not start in time")
     yield xnat_config.xnat_uri
     xnat4tests.stop_xnat(xnat_config)
