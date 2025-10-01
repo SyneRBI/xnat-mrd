@@ -101,6 +101,14 @@ repos:
         args:
           - --write
           - --xml-whitespace-sensitivity=ignore
+      - id: prettier
+        name: prettier (java)
+        additional_dependencies:
+          - prettier@2.8.8
+          - prettier-plugin-java@2.0.0
+        files: \.(java|vm|vsl)$
+        args:
+          - --write
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -138,11 +146,3 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.15.0
-    hooks:
-      - id: pretty-format-java
-        files: \.(java|vm|vsl)$
-        args:
-          - --aosp
-          - --autofix

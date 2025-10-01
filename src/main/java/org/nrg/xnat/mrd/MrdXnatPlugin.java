@@ -14,13 +14,15 @@ import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.xdat.bean.MrdMrdscandataBean;
 
 @XnatPlugin(
-        value = "mrdPlugin",
-        name = "XNAT 1.8 ISMRMRD plugin",
-        dataModels = {
-            @XnatDataModel(
-                    value = MrdMrdscandataBean.SCHEMA_ELEMENT_NAME,
-                    singular = "MR raw data",
-                    plural = "MR raw data",
-                    code = "ISMRMRD")
-        })
+  value = "mrdPlugin",
+  name = "XNAT 1.8 ISMRMRD plugin",
+  dataModels = {
+    @XnatDataModel(
+      value = MrdMrdscandataBean.SCHEMA_ELEMENT_NAME,
+      singular = "MR raw data",
+      plural = "MR raw data",
+      code = "ISMRMRD"
+    ),
+  }
+)
 public class MrdXnatPlugin {}
