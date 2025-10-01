@@ -52,10 +52,6 @@ or
 
 ## Running pre-commit
 
-**Prerequisites:** Java version 11 or greater is required to run pre-commit. If
-you encounter issues, installing the latest Azul Zulu OpenJDK should resolve
-them.
-
 To set up and run pre-commit:
 
 ```shell
