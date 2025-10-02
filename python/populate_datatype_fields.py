@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def verify_project_exists(session: xnat.session, project_name: str) -> Any:
+def verify_project_exists(session: xnat.session.XNATSession, project_name: str) -> Any:
     """Verify project exist on XNAT server - disconnect if project does not exist"""
     try:
         xnat_project = session.projects[project_name]
@@ -39,8 +39,6 @@ def verify_project_exists(session: xnat.session, project_name: str) -> Any:
         logger.error(f"Project {project_name} not available on server")
         raise NameError(f"Project {project_name} not available on server.")
 
-    logger.info(f"Project {xnat_project} exists")
-    return xnat_project
 
 
 def create_unique_subject(
@@ -141,7 +139,7 @@ def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> No
 
         # Create resource for MRD files - create the resource first, then upload
         scan_resource = scan.create_resource("MR_RAW")
-        scan_resource.upload(mrd_file, os.path.basename(mrd_file))
+        scan_resource.upload(mrd_file, mrd_file.name)
         logger.info(f"Successfully created scan {scan_id} and uploaded MRD file")
 
 
@@ -155,7 +153,6 @@ def main():
         / "test-data"
         / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
-    mrd_file = str(mrd_file_path)
 
     logger.info(f"MRD file path: {mrd_file}")
 
@@ -181,7 +178,7 @@ def main():
         dset = ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False)
         header = dset.read_xml_header()
         xnat_hdr = mrd_2_xnat(
-            header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
+            header, Path(__file__).parent / "ismrmrd.xsd"
         )
         add_scan(experiment, xnat_hdr, scan_id, mrd_file)
 

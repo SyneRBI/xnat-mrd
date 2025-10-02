@@ -29,7 +29,7 @@ def get_main_parameter_groups(ismrmrd_dict: dict) -> list:
 
 
 def create_list_param_names(xnat_mrd_list: list, ismrmrd_dict: dict) -> list:
-    """Given a dictionary with info from DICOM headers and a list of main parameter groups
+    """Given a dictionary with info from Mrd headers and a list of main parameter groups
     return a list of parameter names nested within main parameter groups"""
     for _ in range(5):
         flag_finished = True
@@ -242,7 +242,7 @@ def create_final_xnat_mrd_dict(
 def check_header_valid_convert_to_dict(
     xml_scheme_filename: str, ismrmrd_header: bytes
 ) -> dict:
-    """User xmlschema package to read in xml_scheme_filename as xmlschema object and check
+    """Use xmlschema package to read in xml_scheme_filename as xmlschema object and check
     mrd_header is valid before converting the header to a dictionary and returning"""
     xml_schema = xmlschema.XMLSchema(xml_scheme_filename)
 
@@ -253,7 +253,7 @@ def check_header_valid_convert_to_dict(
     return xml_schema.to_dict(ismrmrd_header)
 
 
-def mrd_2_xnat(ismrmrd_header: bytes, xml_scheme_filename: str) -> dict:
+def mrd_2_xnat(ismrmrd_header: bytes, xml_schema_filepath: Path) -> dict:
     ismrmrd_dict = check_header_valid_convert_to_dict(
         xml_scheme_filename, ismrmrd_header
     )
