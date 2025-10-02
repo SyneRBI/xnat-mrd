@@ -33,15 +33,21 @@ def xnat_uri(xnat_config):
         raise FileNotFoundError(f"Plugin JAR file not found at {source_path}")
 
     xnat4tests.start_xnat(xnat_config)
-    subprocess.run(
-        [
-            "docker",
-            "cp",
-            source_path,
-            f"xnat_mrd_xnat4tests:{plugin_path / source_path.name}",
-        ],
-        check=True,
-    )
+    try:
+        subprocess.run(
+            [
+                "docker",
+                "cp",
+                str(source_path),
+                f"xnat_mrd_xnat4tests:{(plugin_path / source_path.name).as_posix()}",
+            ],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
+        ) from e
+
     xnat4tests.restart_xnat(xnat_config)
 
     # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
