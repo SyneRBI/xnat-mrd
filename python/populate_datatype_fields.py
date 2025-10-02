@@ -174,11 +174,11 @@ def main():
             session, xnat_project, subject_list
         )
         experiment = add_exam(xnat_subject, time_id, experiment_date)
-        # Load MRD header and convert to XNAT format
-        dset = ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False)
-        mrd_header = dset.read_xml_header()
-        xnat_header = mrd_2_xnat(
-            header, Path(__file__).parent / "ismrmrd.xsd"
+# Load MRD header and convert to XNAT format
+with ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False) as dset:
+        header = dset.read_xml_header()
+        xnat_hdr = mrd_2_xnat(
+            header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
         )
         add_scan(experiment, xnat_hdr, scan_id, mrd_file)
 
