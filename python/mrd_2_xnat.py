@@ -256,6 +256,11 @@ def check_header_valid_convert_to_dict(
 
 
 def mrd_2_xnat(ismrmrd_header: bytes, xml_schema_filepath: Path) -> dict:
+    """
+    This takes the ismrmrd_header and converts it to a dictionary compatible with XNAT data types.
+    The xml_schema_filename points to a local copy of the official MRD header xml schema (.xsd file):
+    https://ismrmrd.readthedocs.io/en/latest/mrd_header.html
+    """
     ismrmrd_dict = check_header_valid_convert_to_dict(
         xml_schema_filepath, ismrmrd_header
     )
