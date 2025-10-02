@@ -1,9 +1,9 @@
 import xmlschema
-from typing import Any, Tuple, Optional
+from typing import Any, Tuple
 from pathlib import Path
 
 
-def get_dict_values(dict: dict, key_list: list) -> Optional[Any]:
+def get_dict_values(dict: dict, key_list: list[Any]) -> Any:
     """Given a dictionary and a list of keys, a new filtered
     dictionary is returned"""
     if key_list:
@@ -15,21 +15,19 @@ def get_dict_values(dict: dict, key_list: list) -> Optional[Any]:
         return None
 
 
-def get_main_parameter_groups(ismrmrd_dict: dict) -> list:
+def get_main_parameter_groups(ismrmrd_dict: dict[str, Any]) -> list[list[Any]]:
     """Given a dictionary, pull out the main parameter groups i.e. keys and
     return in a list"""
     xnat_mrd_list = []
     for ckeys in ismrmrd_dict.keys():
         if "@" not in ckeys and "userParameter" not in ckeys:
-            xnat_mrd_list.append(
-                [
-                    ckeys,
-                ]
-            )
+            xnat_mrd_list.append([ckeys])
     return xnat_mrd_list
 
 
-def create_list_param_names(xnat_mrd_list: list, ismrmrd_dict: dict) -> list:
+def create_list_param_names(
+    xnat_mrd_list: list[list[Any]], ismrmrd_dict: dict[str, Any]
+) -> list[list[Any]]:
     """Given a dictionary with info from Mrd headers and a list of main parameter groups
     return a list of parameter names nested within main parameter groups"""
     for _ in range(5):
@@ -58,13 +56,14 @@ def create_list_param_names(xnat_mrd_list: list, ismrmrd_dict: dict) -> list:
         if flag_finished:
             break
         xnat_mrd_list = xnat_mrd_list_new
-
     return xnat_mrd_list
 
 
 def handle_coil_label(
-    xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
-) -> Tuple[list, dict]:
+    xnat_mrd_list: list[list[Any]],
+    ismrmrd_dict: dict[str, Any],
+    xnat_mrd_dict: dict[str, str],
+) -> Tuple[list[list[Any]], dict[str, str]]:
     """
     Process and consolidate coil label information from ismrmrd_dict.
 
@@ -103,8 +102,10 @@ def handle_coil_label(
 
 
 def handle_waveform_info(
-    xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
-) -> Tuple[list, dict]:
+    xnat_mrd_list: list[list[Any]],
+    ismrmrd_dict: dict[str, Any],
+    xnat_mrd_dict: dict[str, str],
+) -> Tuple[list[list[Any]], dict[str, str]]:
     """
     Process and consolidate waveform information from ismrmrd_dict.
 
@@ -130,7 +131,7 @@ def handle_waveform_info(
     return xnat_mrd_list, xnat_mrd_dict
 
 
-def handle_encoding(xnat_mrd_list: list) -> list:
+def handle_encoding(xnat_mrd_list: list[list[Any]]) -> list[list[Any]]:
     """
     Filter out unwanted encoding parameters from xnat_mrd_list.
 
@@ -159,7 +160,7 @@ def handle_encoding(xnat_mrd_list: list) -> list:
     return xnat_mrd_list
 
 
-def handle_sequence_params(xnat_mrd_list: list) -> list:
+def handle_sequence_params(xnat_mrd_list: list[list[Any]]) -> list[list[Any]]:
     """
     Filter out unwanted sequence parameters from xnat_mrd_list.
 
@@ -185,7 +186,7 @@ def handle_sequence_params(xnat_mrd_list: list) -> list:
     return xnat_mrd_list
 
 
-def handle_meas_info(xnat_mrd_list: list) -> list:
+def handle_meas_info(xnat_mrd_list: list[list[Any]]) -> list[list[Any]]:
     """
     Filter out unwanted measurement info from xnat_mrd_list.
 
@@ -216,8 +217,10 @@ def handle_meas_info(xnat_mrd_list: list) -> list:
 
 
 def create_final_xnat_mrd_dict(
-    xnat_mrd_list: list, ismrmrd_dict: dict, xnat_mrd_dict: dict
-) -> dict:
+    xnat_mrd_list: list[list[Any]],
+    ismrmrd_dict: dict[str, Any],
+    xnat_mrd_dict: dict[str, str],
+) -> dict[str, Any]:
     """
     Create final xnat_mrd_dict by building parameter paths and extracting values.
 
@@ -242,7 +245,7 @@ def create_final_xnat_mrd_dict(
 
 def check_header_valid_convert_to_dict(
     xml_scheme_filename: Path, ismrmrd_header: bytes
-) -> dict:
+) -> dict[str, Any]:
     """Use xmlschema package to read in xml_scheme_filename as xmlschema object and check
     mrd_header is valid before converting the header to a dictionary and returning"""
     xml_schema = xmlschema.XMLSchema(xml_scheme_filename)
@@ -255,7 +258,7 @@ def check_header_valid_convert_to_dict(
     return xml_schema.to_dict(ismrmrd_header)
 
 
-def mrd_2_xnat(ismrmrd_header: bytes, xml_schema_filepath: Path) -> dict:
+def mrd_2_xnat(ismrmrd_header: bytes, xml_schema_filepath: Path) -> dict[str, Any]:
     """
     This takes the ismrmrd_header and converts it to a dictionary compatible with XNAT data types.
     The xml_schema_filename points to a local copy of the official MRD header xml schema (.xsd file):
