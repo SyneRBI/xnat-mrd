@@ -71,3 +71,16 @@ If you want to disable the pre-commit hooks:
 
 pre-commit uninstall
 ```
+
+## Requirements
+
+If using uv then you can take advantage of the inline requirements at the top of
+populate_datatype_fields.py by running:
+
+```shell
+
+uv run populate_datatype_fields.py
+```
+
+However, the `requirements.txt` file is still available if running the code as
+normal with python.
