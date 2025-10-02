@@ -6,6 +6,7 @@ import pytest
 import xnat4tests
 import time
 import requests
+import xnat
 
 
 @pytest.fixture(scope="session")
@@ -14,7 +15,6 @@ def xnat_config():
 
     return Config(
         xnat_root_dir=tmp_dir,
-        xnat_port=8080,
         docker_image="xnat_mrd_xnat4tests",
         docker_container="xnat_mrd_xnat4tests",
         build_args={
@@ -33,28 +33,33 @@ def xnat_uri(xnat_config):
         raise FileNotFoundError(f"Plugin JAR file not found at {source_path}")
 
     xnat4tests.start_xnat(xnat_config)
-    subprocess.call(
-        f"docker cp {source_path} xnat_mrd_xnat4tests:{plugin_path / 'mrd-xpl.jar'}",
-        shell=True,
+    subprocess.run(
+        [
+            "docker",
+            "cp",
+            source_path,
+            f"xnat_mrd_xnat4tests:{plugin_path / source_path.name}",
+        ],
+        check=True,
     )
     xnat4tests.restart_xnat(xnat_config)
-    subprocess.call(
-        "docker exec xnat_mrd_xnat4tests ls -la /data/xnat/home/plugins/",
-        shell=True,
-    )
 
-    # Wait for XNAT to be available
-    xnat_url = xnat_config.xnat_uri
-    for _ in range(60):  # Wait up to 60 seconds
+    # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
+    # container startup.
+    for attempts in range(xnat_config.connection_attempts):
         try:
-            r = requests.get(xnat_url)
-            if r.status_code == 200:
-                print("XNAT is up!")
-                break
-        except Exception:
-            pass
-        time.sleep(2)
-    else:
-        raise RuntimeError("XNAT did not start in time")
+            xnat4tests.connect(xnat_config)
+        except (
+            xnat.exceptions.XNATError,
+            requests.ConnectionError,
+            requests.ReadTimeout,
+        ):
+            if attempts == xnat_config.connection_attempts:
+                raise RuntimeError("XNAT did not start in time")
+            else:
+                time.sleep(xnat_config.connection_attempt_sleep)
+        else:
+            break
+
     yield xnat_config.xnat_uri
     xnat4tests.stop_xnat(xnat_config)
