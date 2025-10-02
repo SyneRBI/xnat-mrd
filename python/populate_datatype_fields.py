@@ -29,6 +29,43 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def upload_mrd_data(
+    xnat_session,
+    mrd_file_path,
+    project_name,
+    scan_id="cart_cine_scan",
+    experiment_date=None,
+):
+    mrd_file_path = (
+        Path(__file__).parent.parent
+        / "test-data"
+        / "ptb_resolutionphantom_fully_ismrmrd.h5"
+    )
+
+    logger.info(f"MRD file path: {mrd_file_path}")
+
+    if not mrd_file_path.exists():
+        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
+
+    if experiment_date is None:
+        experiment_date = "2022-05-04"
+
+    # Use context manager for automatic connection cleanup
+    with xnat_session:
+        logger.info("Connected to XNAT server")
+
+        xnat_project = verify_project_exists(xnat_session, project_name)
+        xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
+        experiment = add_exam(xnat_subject, time_id, experiment_date)
+        # Load MRD header and convert to XNAT format
+        with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+            header = dset.read_xml_header()
+            xnat_hdr = mrd_2_xnat(
+                header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
+            )
+            add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+
+
 def verify_project_exists(session: xnat.session.XNATSession, project_name: str) -> Any:
     """Verify project exist on XNAT server - disconnect if project does not exist"""
     try:
@@ -41,7 +78,7 @@ def verify_project_exists(session: xnat.session.XNATSession, project_name: str) 
 
 
 def create_unique_subject(
-    session: xnat.XNATSession, xnat_project: Any, subject_list: list
+    session: xnat.XNATSession, xnat_project: Any
 ) -> Tuple[Any, str]:
     """Create a unique subject that doesn't already exist"""
     time_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
@@ -59,7 +96,6 @@ def create_unique_subject(
     # As per documentation: session.classes.SubjectData(parent=project, label='new_subject_label')
     xnat_subject = session.classes.SubjectData(parent=xnat_project, label=subject_id)
 
-    subject_list.append(subject_id)
     logger.info(f"Created subject: {subject_id}")
 
     return xnat_subject, time_id
@@ -154,16 +190,13 @@ def main():
     scan_id = "cart_cine_scan"
 
     project_name = "mrd"
-    subject_list = []
 
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:
         logger.info("Connected to XNAT server")
 
         xnat_project = verify_project_exists(session, project_name)
-        xnat_subject, time_id = create_unique_subject(
-            session, xnat_project, subject_list
-        )
+        xnat_subject, time_id = create_unique_subject(session, xnat_project)
         experiment = add_exam(xnat_subject, time_id, experiment_date)
         # Load MRD header and convert to XNAT format
         with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
