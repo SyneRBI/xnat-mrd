@@ -40,7 +40,6 @@ def verify_project_exists(session: xnat.session.XNATSession, project_name: str) 
         raise NameError(f"Project {project_name} not available on server.")
 
 
-
 def create_unique_subject(
     session: xnat.XNATSession, xnat_project: Any, subject_list: list
 ) -> Tuple[Any, str]:
@@ -88,7 +87,9 @@ def add_exam(xnat_subject: Any, time_id: str, experiment_date: str) -> Any:
     return experiment
 
 
-def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> None:
+def add_scan(
+    experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file_path: Path
+) -> None:
     """Add scan to experiment. Create scan with the xnat_hdr info. Add MR_RAW resource
     to scan with mrd_file data.
 
@@ -96,39 +97,39 @@ def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> No
         experiment (Any): existing XNAT experiment
         xnat_hdr (dict): dict containing all the header info to populate in the data type mrd
         scan_id (str): custom str e.g. cart_cine_scan
-        mrd_file (str): _description_
+        mrd_file (str): str for filename of mrd_file containing MR raw data
     """
     # Check if scan already exists, otherwise create it with all header data
     if scan_id in experiment.scans:
-        logger.warning(f"XNAT scan {scan_id} already exists")
-        scan = experiment.scans[scan_id]
-    else:
-        # Create the scan with all MRD header data at once
-        logger.info(f"Creating MRD scan {scan_id} with header data")
+        logger.error(f"XNAT scan {scan_id} already exists")
+        raise NameError(f"XNAT scan {scan_id} already exists")
 
-        # Use the xnat library's proper method for creating scans with data
-        session = experiment.xnat_session
-        scan_uri = f"{experiment.uri}/scans/{scan_id}"
+    # Create the scan with all MRD header data at once
+    logger.info(f"Creating MRD scan {scan_id} with header data")
 
-        # Create the scan using PUT request with all header data as query parameters
-        response = session.put(scan_uri, query=xnat_hdr)
+    # Use the xnat library's proper method for creating scans with data
+    session = experiment.xnat_session
+    scan_uri = f"{experiment.uri}/scans/{scan_id}"
 
-        if response.ok:
-            logger.info(f"Successfully created MRD scan: {scan_id}")
-            # Refresh the experiment to see the new scan
-            experiment.clearcache()
+    # Create the scan using PUT request with all header data as query parameters
+    response = session.put(scan_uri, query=xnat_hdr)
 
-            # Get the created scan object
-            try:
-                scan = experiment.scans[scan_id]
-            except KeyError:
-                # If scan still not found, it might need more time or different approach
-                logger.warning(
-                    f"Scan {scan_id} created but not immediately available, trying alternative approach"
-                )
-                # Fall back to creating scan object directly
-                session = experiment.xnat_session
-                scan = session.classes.MrdMrdScanData(parent=experiment, id=scan_id)
+    if response.ok:
+        logger.info(f"Successfully created MRD scan: {scan_id}")
+        # Refresh the experiment to see the new scan
+        experiment.clearcache()
+
+        # Get the created scan object
+        try:
+            scan = experiment.scans[scan_id]
+        except KeyError:
+            # If scan still not found, it might need more time or different approach
+            logger.warning(
+                f"Scan {scan_id} created but not immediately available, trying alternative approach"
+            )
+            # Fall back to creating scan object directly
+            session = experiment.xnat_session
+            scan = session.classes.MrdMrdScanData(parent=experiment, id=scan_id)
         else:
             logger.error(
                 f"Failed to create scan: {response.status_code} - {response.text}"
@@ -139,7 +140,7 @@ def add_scan(experiment: Any, xnat_hdr: dict, scan_id: str, mrd_file: str) -> No
 
         # Create resource for MRD files - create the resource first, then upload
         scan_resource = scan.create_resource("MR_RAW")
-        scan_resource.upload(mrd_file, mrd_file.name)
+        scan_resource.upload(mrd_file_path, mrd_file_path.name)
         logger.info(f"Successfully created scan {scan_id} and uploaded MRD file")
 
 
@@ -154,10 +155,10 @@ def main():
         / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
 
-    logger.info(f"MRD file path: {mrd_file}")
+    logger.info(f"MRD file path: {mrd_file_path}")
 
     if not mrd_file_path.exists():
-        raise FileNotFoundError(f"MRD file not found: {mrd_file}")
+        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
 
     experiment_date = "2022-05-04"
     scan_id = "cart_cine_scan"
@@ -174,13 +175,13 @@ def main():
             session, xnat_project, subject_list
         )
         experiment = add_exam(xnat_subject, time_id, experiment_date)
-# Load MRD header and convert to XNAT format
-with ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False) as dset:
+    # Load MRD header and convert to XNAT format
+    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
         header = dset.read_xml_header()
         xnat_hdr = mrd_2_xnat(
             header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
         )
-        add_scan(experiment, xnat_hdr, scan_id, mrd_file)
+        add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
 
 
 if __name__ == "__main__":

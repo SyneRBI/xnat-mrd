@@ -1,5 +1,6 @@
 import xmlschema
 from typing import Any, Tuple, Optional
+from pathlib import Path
 
 
 def get_dict_values(dict: dict, key_list: list) -> Optional[Any]:
@@ -240,22 +241,23 @@ def create_final_xnat_mrd_dict(
 
 
 def check_header_valid_convert_to_dict(
-    xml_scheme_filename: str, ismrmrd_header: bytes
+    xml_scheme_filename: Path, ismrmrd_header: bytes
 ) -> dict:
     """Use xmlschema package to read in xml_scheme_filename as xmlschema object and check
     mrd_header is valid before converting the header to a dictionary and returning"""
     xml_schema = xmlschema.XMLSchema(xml_scheme_filename)
 
-    assert xml_schema.is_valid(ismrmrd_header), (
-        "Raw data file is not a valid ismrmrd file"
-    )
+    if not xml_schema.is_valid(ismrmrd_header):
+        raise Exception(
+            f"Raw data file: {xml_scheme_filename} is not a valid ismrmrd file"
+        )
 
     return xml_schema.to_dict(ismrmrd_header)
 
 
 def mrd_2_xnat(ismrmrd_header: bytes, xml_schema_filepath: Path) -> dict:
     ismrmrd_dict = check_header_valid_convert_to_dict(
-        xml_scheme_filename, ismrmrd_header
+        xml_schema_filepath, ismrmrd_header
     )
 
     xnat_mrd_list = get_main_parameter_groups(ismrmrd_dict)
