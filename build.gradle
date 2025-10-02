@@ -16,9 +16,9 @@ buildscript {
 plugins {
     id "jacoco"
     id "java"
-    id "com.palantir.git-version" version "0.12.1"
+    id "com.palantir.git-version" version "3.1.0"
     id "io.franzbecker.gradle-lombok" version "4.0.0"
-    id "io.spring.dependency-management" version "1.0.11.RELEASE"
+    id "io.spring.dependency-management" version "1.1.6"
     id "org.nrg.xnat.build.xnat-data-builder" version "${vXnat}"
     id "maven-publish"
 }
@@ -245,8 +245,18 @@ task xnatPluginJar(type: Jar) {
     with jar
 }
 
+// Suppress 'enforced-platform' error triggered by publishing to Github Packages.
+// xnat has a dependency on the enforced platform org.nrg:parent
+tasks.withType(GenerateModuleMetadata).configureEach {
+    suppressedValidationErrors.add("enforced-platform")
+}
 
 publishing {
+  publications {
+      gpr(MavenPublication) {
+          from components.java
+      }
+  }
   repositories {
     maven {
       name = "GitHubPackages"
