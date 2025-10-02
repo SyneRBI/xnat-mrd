@@ -120,28 +120,18 @@ def add_scan(
         experiment.clearcache()
 
         # Get the created scan object
-        try:
-            scan = experiment.scans[scan_id]
-        except KeyError:
-            # If scan still not found, it might need more time or different approach
-            logger.warning(
-                f"Scan {scan_id} created but not immediately available, trying alternative approach"
-            )
-            # Fall back to creating scan object directly
-            session = experiment.xnat_session
-            scan = session.classes.MrdMrdScanData(parent=experiment, id=scan_id)
-        else:
-            logger.error(
-                f"Failed to create scan: {response.status_code} - {response.text}"
-            )
-            raise Exception(f"Failed to create MRD scan: {response.status_code}")
+        scan = experiment.scans[scan_id]
 
-        logger.info(f"Configured MRD scan: {scan_id}")
+    else:
+        logger.error(f"Failed to create scan: {response.status_code} - {response.text}")
+        raise Exception(f"Failed to create MRD scan: {response.status_code}")
 
-        # Create resource for MRD files - create the resource first, then upload
-        scan_resource = scan.create_resource("MR_RAW")
-        scan_resource.upload(mrd_file_path, mrd_file_path.name)
-        logger.info(f"Successfully created scan {scan_id} and uploaded MRD file")
+    logger.info(f"Configured MRD scan: {scan_id}")
+
+    # Create resource for MRD files - create the resource first, then upload
+    scan_resource = scan.create_resource("MR_RAW")
+    scan_resource.upload(mrd_file_path, mrd_file_path.name)
+    logger.info(f"Successfully created scan {scan_id} and uploaded MRD file")
 
 
 def main():
@@ -175,13 +165,13 @@ def main():
             session, xnat_project, subject_list
         )
         experiment = add_exam(xnat_subject, time_id, experiment_date)
-    # Load MRD header and convert to XNAT format
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-        header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(
-            header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
-        )
-        add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+        # Load MRD header and convert to XNAT format
+        with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+            header = dset.read_xml_header()
+            xnat_hdr = mrd_2_xnat(
+                header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
+            )
+            add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
 
 
 if __name__ == "__main__":
