@@ -176,8 +176,8 @@ def main():
         experiment = add_exam(xnat_subject, time_id, experiment_date)
         # Load MRD header and convert to XNAT format
         dset = ismrmrd.Dataset(mrd_file, "dataset", create_if_needed=False)
-        header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(
+        mrd_header = dset.read_xml_header()
+        xnat_header = mrd_2_xnat(
             header, Path(__file__).parent / "ismrmrd.xsd"
         )
         add_scan(experiment, xnat_hdr, scan_id, mrd_file)
