@@ -244,16 +244,14 @@ def create_final_xnat_mrd_dict(
 
 
 def check_header_valid_convert_to_dict(
-    xml_scheme_filename: Path, ismrmrd_header: bytes
+    xml_schema_filename: Path, ismrmrd_header: bytes
 ) -> dict[str, Any]:
-    """Use xmlschema package to read in xml_scheme_filename as xmlschema object and check
+    """Use xmlschema package to read in xml_schema_filename as xmlschema object and check
     mrd_header is valid before converting the header to a dictionary and returning"""
-    xml_schema = xmlschema.XMLSchema(xml_scheme_filename)
+    xml_schema = xmlschema.XMLSchema(xml_schema_filename)
 
     if not xml_schema.is_valid(ismrmrd_header):
-        raise Exception(
-            f"Raw data file: {xml_scheme_filename} is not a valid ismrmrd file"
-        )
+        raise Exception("Raw data file is not a valid ismrmrd file")
 
     return xml_schema.to_dict(ismrmrd_header)
 

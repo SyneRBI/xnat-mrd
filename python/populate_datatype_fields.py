@@ -11,7 +11,6 @@ import xnat
 from pathlib import Path
 from datetime import datetime
 from mrd_2_xnat import mrd_2_xnat
-import os
 import ismrmrd
 import logging
 from typing import Any, Tuple
@@ -30,43 +29,30 @@ logger = logging.getLogger(__name__)
 
 
 def upload_mrd_data(
-    xnat_session,
-    mrd_file_path,
-    project_name,
-    scan_id="cart_cine_scan",
-    experiment_date=None,
-):
-    mrd_file_path = (
-        Path(__file__).parent.parent
-        / "test-data"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
-    )
-
+    xnat_session: xnat.XNATSession,
+    mrd_file_path: Path,
+    project_name: str,
+    scan_id: str = "cart_cine_scan",
+    experiment_date: str = "2022-05-04",
+) -> None:
     logger.info(f"MRD file path: {mrd_file_path}")
 
     if not mrd_file_path.exists():
         raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
 
-    if experiment_date is None:
-        experiment_date = "2022-05-04"
+    xnat_project = verify_project_exists(xnat_session, project_name)
+    xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
+    experiment = add_exam(xnat_subject, time_id, experiment_date)
 
-    # Use context manager for automatic connection cleanup
-    with xnat_session:
-        logger.info("Connected to XNAT server")
+    # Load MRD header and convert to XNAT format
+    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+        header = dset.read_xml_header()
+        xnat_hdr = mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
 
-        xnat_project = verify_project_exists(xnat_session, project_name)
-        xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
-        experiment = add_exam(xnat_subject, time_id, experiment_date)
-        # Load MRD header and convert to XNAT format
-        with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-            header = dset.read_xml_header()
-            xnat_hdr = mrd_2_xnat(
-                header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
-            )
-            add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+    add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
 
 
-def verify_project_exists(session: xnat.session.XNATSession, project_name: str) -> Any:
+def verify_project_exists(session: xnat.XNATSession, project_name: str) -> Any:
     """Verify project exist on XNAT server - disconnect if project does not exist"""
     try:
         xnat_project = session.projects[project_name]
@@ -133,7 +119,7 @@ def add_scan(
         experiment (Any): existing XNAT experiment
         xnat_hdr (dict): dict containing all the header info to populate in the data type mrd
         scan_id (str): custom str e.g. cart_cine_scan
-        mrd_file (str): str for filename of mrd_file containing MR raw data
+        mrd_file_path (Path): Path of mrd_file containing MR raw data
     """
     # Check if scan already exists, otherwise create it with all header data
     if scan_id in experiment.scans:
@@ -174,6 +160,7 @@ def main():
     xnat_server_address = "http://localhost"
     user = "admin"
     password = "admin"
+    project_name = "mrd"
 
     mrd_file_path = (
         Path(__file__).parent.parent
@@ -181,30 +168,10 @@ def main():
         / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
 
-    logger.info(f"MRD file path: {mrd_file_path}")
-
-    if not mrd_file_path.exists():
-        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
-
-    experiment_date = "2022-05-04"
-    scan_id = "cart_cine_scan"
-
-    project_name = "mrd"
-
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:
         logger.info("Connected to XNAT server")
-
-        xnat_project = verify_project_exists(session, project_name)
-        xnat_subject, time_id = create_unique_subject(session, xnat_project)
-        experiment = add_exam(xnat_subject, time_id, experiment_date)
-        # Load MRD header and convert to XNAT format
-        with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-            header = dset.read_xml_header()
-            xnat_hdr = mrd_2_xnat(
-                header, os.path.join(os.path.dirname(__file__), "ismrmrd.xsd")
-            )
-            add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+        upload_mrd_data(session, mrd_file_path, project_name)
 
 
 if __name__ == "__main__":
