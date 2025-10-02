@@ -2,7 +2,6 @@ import tempfile
 from pathlib import Path
 import subprocess
 from xnat4tests import Config
-import os
 import pytest
 import xnat4tests
 import time
@@ -15,7 +14,7 @@ def xnat_config():
 
     return Config(
         xnat_root_dir=tmp_dir,
-        xnat_port=9999,
+        xnat_port=8080,
         docker_image="xnat_mrd_xnat4tests",
         docker_container="xnat_mrd_xnat4tests",
         build_args={
@@ -27,11 +26,12 @@ def xnat_config():
 
 @pytest.fixture(scope="session")
 def xnat_uri(xnat_config):
-    print(os.getcwd())
     plugin_path = Path("/data/xnat/home/plugins")
-    source_path = Path(__file__).parent / "mrd-xpl.jar"
+    source_path = Path(__file__).parents[2] / "build" / "libs" / "mrd-xpl.jar"
+
     if not source_path.exists():
         raise FileNotFoundError(f"Plugin JAR file not found at {source_path}")
+
     xnat4tests.start_xnat(xnat_config)
     subprocess.call(
         f"docker cp {source_path} xnat_mrd_xnat4tests:{plugin_path / 'mrd-xpl.jar'}",
