@@ -1,19 +1,18 @@
-import tempfile
 from pathlib import Path
 import subprocess
-from xnat4tests import Config
 import pytest
 import xnat4tests
 import time
 import requests
 import xnat
+import re
 
 
 @pytest.fixture(scope="session")
-def xnat_config():
-    tmp_dir = Path(tempfile.mkdtemp())
+def xnat_config(tmp_path_factory):
+    tmp_dir = tmp_path_factory.mktemp("data")
 
-    return Config(
+    return xnat4tests.Config(
         xnat_root_dir=tmp_dir,
         docker_image="xnat_mrd_xnat4tests",
         docker_container="xnat_mrd_xnat4tests",
@@ -25,21 +24,39 @@ def xnat_config():
 
 
 @pytest.fixture(scope="session")
-def xnat_uri(xnat_config):
-    plugin_path = Path("/data/xnat/home/plugins")
-    source_path = Path(__file__).parents[2] / "build" / "libs" / "mrd-xpl.jar"
+def jar_path():
+    jar_dir = Path(__file__).parents[2] / "build" / "libs"
+    return list(jar_dir.glob("mrd-*xpl.jar"))[0]
 
-    if not source_path.exists():
-        raise FileNotFoundError(f"Plugin JAR file not found at {source_path}")
+
+@pytest.fixture(scope="session")
+def plugin_version(jar_path):
+    version = re.search("mrd-(.+?)-xpl.jar", jar_path.name).group(1)
+
+    if version is None:
+        raise NameError(
+            "Jar name contains no version - did you set the JAR_VERSION env variable when you ran gradlew?"
+        )
+    else:
+        return version
+
+
+@pytest.fixture(scope="session")
+def xnat_session(xnat_config, jar_path):
+    plugin_path = Path("/data/xnat/home/plugins")
+    if not jar_path.exists():
+        raise FileNotFoundError(f"Plugin JAR file not found at {jar_path}")
 
     xnat4tests.start_xnat(xnat_config)
+
+    # Install Mrd plugin by copying the jar into the container
     try:
         subprocess.run(
             [
                 "docker",
                 "cp",
-                str(source_path),
-                f"xnat_mrd_xnat4tests:{(plugin_path / source_path.name).as_posix()}",
+                str(jar_path),
+                f"xnat_mrd_xnat4tests:{(plugin_path / jar_path.name).as_posix()}",
             ],
             check=True,
         )
@@ -54,7 +71,7 @@ def xnat_uri(xnat_config):
     # container startup.
     for attempts in range(xnat_config.connection_attempts):
         try:
-            xnat4tests.connect(xnat_config)
+            session = xnat4tests.connect(xnat_config)
         except (
             xnat.exceptions.XNATError,
             requests.ConnectionError,
@@ -67,5 +84,7 @@ def xnat_uri(xnat_config):
         else:
             break
 
-    yield xnat_config.xnat_uri
+    yield session
+
+    session.disconnect()
     xnat4tests.stop_xnat(xnat_config)
