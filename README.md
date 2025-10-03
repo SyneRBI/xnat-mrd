@@ -2,6 +2,12 @@
 
 Xnat schema for ISMRMRD data format.
 
+## Build the plugin locally
+
+**Note:** The plugin must be built using `Java 8`. If you have multiple Java
+versions installed, ensure your IDE is set to use the correct version, or the
+`JAVA_HOME` environment variable is set to the `Java 8` path.
+
 In order to create the plugin clone the repository:
 
 ```shell
