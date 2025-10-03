@@ -35,7 +35,7 @@ def plugin_version(jar_path):
 
     if version is None:
         raise NameError(
-            "Jar name contains no version - did you set the JAR_VERSION env variable when you ran gradlew?"
+            "Jar name contains no version - did you pull the latest tags from github before running gradlew?"
         )
     else:
         return version
