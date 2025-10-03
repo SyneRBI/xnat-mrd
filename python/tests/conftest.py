@@ -31,14 +31,14 @@ def jar_path():
 
 @pytest.fixture(scope="session")
 def plugin_version(jar_path):
-    version = re.search("mrd-(.+?)-xpl.jar", jar_path.name).group(1)
+    match_version = re.search("mrd-(.+?)-xpl.jar", jar_path.name)
 
-    if version is None:
+    if match_version is None:
         raise NameError(
             "Jar name contains no version - did you pull the latest tags from github before running gradlew?"
         )
     else:
-        return version
+        return match_version.group(1)
 
 
 @pytest.fixture(scope="session")
