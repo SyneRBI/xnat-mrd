@@ -22,6 +22,13 @@ jobs:
     timeout-minutes: 10
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        xnat-version:
+          - 1.9.2
+          - 1.8.3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -51,7 +58,11 @@ jobs:
           pip install -r python/tests/requirements.txt
 
       - name: Build plugin
+        env:
+          XNAT_VERSION: ${{ matrix.xnat-version }}
         run: ./gradlew clean xnatPluginJar
 
       - name: Run tests with pytest
+        env:
+          XNAT_VERSION: ${{ matrix.xnat-version }}
         run: pytest
