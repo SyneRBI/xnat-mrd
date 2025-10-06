@@ -18,6 +18,7 @@ gradle-app.setting
 # Python-related files
 __pycache__/
 test-data/
+*.egg-info/
 
 # Log files
 *.log
