@@ -56,7 +56,7 @@ def mrd_schema_fields():
 
 
 @pytest.fixture
-def mrd_data():
+def mrd_file_path():
     """Provides the mrd_data filepath"""
 
     mrd_data = (
@@ -69,12 +69,7 @@ def mrd_data():
 
 
 @pytest.fixture
-def mrd_headers():
-    mrd_file_path = (
-        Path(__file__).parents[2]
-        / "test-data"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
-    )
+def mrd_headers(mrd_file_path):
     with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
         header = dset.read_xml_header()
         xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
@@ -109,14 +104,14 @@ def test_mrd_data_fields(xnat_session, mrd_schema_fields):
     assert sorted(xnat_data_fields) == sorted(expected_data_fields)
 
 
-def test_mrd_data_upload(xnat_session, mrd_data, mrd_headers):
+def test_mrd_data_upload(xnat_session, mrd_file_path, mrd_headers):
     project_id = "mrd"
 
     xnat_session.put(f"/data/archive/projects/{project_id}")
 
     project = xnat_session.projects[project_id]
 
-    upload_mrd_data(xnat_session, mrd_data, project_id)
+    upload_mrd_data(xnat_session, mrd_file_path, project_id)
     assert len(project.subjects) == 1
     subject = project.subjects[0]
 
@@ -139,7 +134,7 @@ def test_mrd_data_upload(xnat_session, mrd_data, mrd_headers):
                 )
 
 
-def test_mrd_data_modification(xnat_session, mrd_headers):
+def test_mrd_data_modification(xnat_session):
     project = xnat_session.projects["mrd"]
     subject = project.subjects[0]
 
