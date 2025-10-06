@@ -25,12 +25,17 @@ jobs:
 
     strategy:
       matrix:
+        # Pairs of xnat version + xnat container service plugin version to test.
         include:
           - xnat-version: 1.9.2
             xnat-cs-version: 3.7.2
 
           - xnat-version: 1.8.3
             xnat-cs-version: 3.1.0
+
+    name:
+      xnat ${{ matrix.xnat-version }} - container service ${{
+      matrix.xnat-cs-version }}
 
     steps:
       - name: Checkout code
