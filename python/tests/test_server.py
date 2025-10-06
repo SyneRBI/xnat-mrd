@@ -1,7 +1,14 @@
-import xnat
+import pdb
+import time
 from pathlib import Path
-import xmlschema
+
+import ismrmrd
 import pytest
+import xmlschema
+import xnat
+
+from mrd_2_xnat import mrd_2_xnat
+from populate_datatype_fields import upload_mrd_data
 
 
 @pytest.fixture
@@ -50,6 +57,33 @@ def mrd_schema_fields():
     return component_paths
 
 
+@pytest.fixture
+def mrd_data():
+    """Provides the mrd_data filepath"""
+
+    mrd_data = (
+        Path(__file__).parents[2]
+        / "test-data"
+        / "ptb_resolutionphantom_fully_ismrmrd.h5"
+    )
+
+    return mrd_data
+
+
+@pytest.fixture
+def mrd_headers():
+    mrd_file_path = (
+        Path(__file__).parents[2]
+        / "test-data"
+        / "ptb_resolutionphantom_fully_ismrmrd.h5"
+    )
+    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+        header = dset.read_xml_header()
+        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
+
+    return xnat_hdr
+
+
 def test_mrdPlugin_installed(xnat_session, plugin_version):
     assert "mrdPlugin" in xnat_session.plugins
     mrd_plugin = xnat_session.plugins["mrdPlugin"]
@@ -75,3 +109,55 @@ def test_mrd_data_fields(xnat_session, mrd_schema_fields):
     expected_data_fields = mrd_schema_fields + additional_xnat_fields
 
     assert sorted(xnat_data_fields) == sorted(expected_data_fields)
+
+
+def test_mrd_data_upload(xnat_session, mrd_data, mrd_headers):
+    project_id = "mrd"
+    project_name = "MRD Project"
+    project_description = "MRD test project"
+
+    # Create the project using the XNAT REST API
+    uri = f"/data/projects/{project_id}"
+    payload = {
+        "name": project_name,
+        "description": project_description,
+        "id": project_id,
+    }
+    response = xnat_session.put(uri, query=payload)
+    assert response.ok, (
+        f"Failed to create project: {response.status_code} {response.text}"
+    )
+
+    # Retry until project appears (max 5 seconds)
+    for _ in range(10):
+        try:
+            project = xnat_session.projects[project_id]
+            break
+        except KeyError:
+            time.sleep(0.5)
+    else:
+        raise RuntimeError(f"Project '{project_id}' not found after creation.")
+
+    upload_mrd_data(xnat_session, mrd_data, project_name)
+    assert len(project.subjects) == 1
+    subject = project.subjects[0]
+    subject.experiments[0].scans[0].data
+    pdb.set_trace()
+    [header for header in mrd_headers]
+
+    missing_parameters = [
+        "waveformInformationList",
+        "alias",
+        "PI/firstname",
+        "PI/lastname",
+        "meta/last_modified",
+        "meta/insert_date",
+        "meta/insert_user",
+    ]
+    for header in mrd_headers:
+        if header[0:16] == "mrd:mrdScanData/":
+            if header[16 : len(header)] not in missing_parameters:
+                assert (
+                    mrd_headers[header]
+                    == subject.experiments[0].scans[0].data[header[16 : len(header)]]
+                )
