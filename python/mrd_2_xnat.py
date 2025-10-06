@@ -238,8 +238,6 @@ def create_final_xnat_mrd_dict(
             ckey = ckey.replace("kspace_encoding_step", "kspace_enc_step")
         xnat_mrd_dict[ckey] = get_dict_values(ismrmrd_dict, param_path)
 
-    xnat_mrd_dict["mrd:mrdScanData/acquisitionSystemInformation/coilLabelList"] = "TEMP"
-
     return xnat_mrd_dict
 
 
