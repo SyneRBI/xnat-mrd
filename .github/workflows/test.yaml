@@ -25,9 +25,12 @@ jobs:
 
     strategy:
       matrix:
-        xnat-version:
-          - 1.9.2
-          - 1.8.3
+        include:
+          - xnat-version: 1.9.2
+            xnat-cs-version: 3.7.2
+
+          - xnat-version: 1.8.3
+            xnat-cs-version: 3.1.0
 
     steps:
       - name: Checkout code
@@ -65,4 +68,5 @@ jobs:
       - name: Run tests with pytest
         env:
           XNAT_VERSION: ${{ matrix.xnat-version }}
+          XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
         run: pytest
