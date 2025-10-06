@@ -7,8 +7,9 @@
  */
 
 buildscript {
+    // Default to using the given version of xnat, but allow override with the XNAT_VERSION environment variable
     ext {
-        vXnat = "1.8.3"
+        vXnat = System.getenv("XNAT_VERSION") ?: "1.9.2"
     }
 }
 
