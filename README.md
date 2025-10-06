@@ -70,7 +70,10 @@ If you want to use a different version locally, you can override this by setting
 the following environment variables:
 
 ```bash
+# Set xnat version
 export XNAT_VERSION=1.8.3
+
+# Set xnat container service plugin version
 export XNAT_CS_VERSION=3.1.0
 ```
 
