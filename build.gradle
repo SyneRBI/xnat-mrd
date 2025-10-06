@@ -24,7 +24,12 @@ plugins {
 }
 
 group "gov.ptb.qmri.xnat"
-def pluginVersion = System.getenv("JAR_VERSION")
+def pluginVersion
+if (versionDetails().lastTag ==~ /^v\d+\.\d+\.\d+$/) {
+    pluginVersion = versionDetails().lastTag[1..-1]
+} else {
+    pluginVersion = null;
+}
 version pluginVersion
 
 description "XNAT plugin to support ISMRMRD raw data"

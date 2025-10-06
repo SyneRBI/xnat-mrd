@@ -35,6 +35,28 @@ before building again with
 ./gradlew clean xnatPluginJar
 ```
 
+## Run tests locally
+
+Follow the steps below to run the tests locally on your computer:
+
+- Install [Docker](https://www.docker.com/) on your computer.
+
+- Install the python dependencies:
+
+  ```bash
+  pip install -r python/tests/requirements.txt
+  ```
+
+- Build the plugin locally, [as described above](#build-the-plugin-locally).
+  This will create a plugin jar at `build/libs/mrd-VERSION-xpl.jar`, which will
+  be used by the tests.
+
+- Run pytest
+
+  ```python
+  pytest
+  ```
+
 ## Creating a new release
 
 Create a new tag in the form `vX.Y.Z` and push it to the repository e.g.

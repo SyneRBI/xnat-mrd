@@ -1,0 +1,5 @@
+pytest
+xnat
+xnat4tests
+xmlschema
+types-requests
