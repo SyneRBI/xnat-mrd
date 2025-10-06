@@ -131,10 +131,11 @@ def test_mrd_data_upload(xnat_session, mrd_data, mrd_headers):
     ]
     for header in mrd_headers:
         if header[0:16] == "mrd:mrdScanData/":
-            if header[16 : len(header)] not in missing_parameters:
+            xnat_header = header[16 : len(header)]
+            if xnat_header not in missing_parameters:
                 assert (
                     mrd_headers[header]
-                    == subject.experiments[0].scans[0].data[header[16 : len(header)]]
+                    == subject.experiments[0].scans[0].data[xnat_header]
                 )
 
 
