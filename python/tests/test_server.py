@@ -1,5 +1,3 @@
-import pdb
-import time
 from pathlib import Path
 
 import ismrmrd
@@ -113,37 +111,14 @@ def test_mrd_data_fields(xnat_session, mrd_schema_fields):
 
 def test_mrd_data_upload(xnat_session, mrd_data, mrd_headers):
     project_id = "mrd"
-    project_name = "MRD Project"
-    project_description = "MRD test project"
 
-    # Create the project using the XNAT REST API
-    uri = f"/data/projects/{project_id}"
-    payload = {
-        "name": project_name,
-        "description": project_description,
-        "id": project_id,
-    }
-    response = xnat_session.put(uri, query=payload)
-    assert response.ok, (
-        f"Failed to create project: {response.status_code} {response.text}"
-    )
+    xnat_session.put(f"/data/archive/projects/{project_id}")
 
-    # Retry until project appears (max 5 seconds)
-    for _ in range(10):
-        try:
-            project = xnat_session.projects[project_id]
-            break
-        except KeyError:
-            time.sleep(0.5)
-    else:
-        raise RuntimeError(f"Project '{project_id}' not found after creation.")
+    project = xnat_session.projects[project_id]
 
-    upload_mrd_data(xnat_session, mrd_data, project_name)
+    upload_mrd_data(xnat_session, mrd_data, project_id)
     assert len(project.subjects) == 1
     subject = project.subjects[0]
-    subject.experiments[0].scans[0].data
-    pdb.set_trace()
-    [header for header in mrd_headers]
 
     missing_parameters = [
         "waveformInformationList",
@@ -161,3 +136,29 @@ def test_mrd_data_upload(xnat_session, mrd_data, mrd_headers):
                     mrd_headers[header]
                     == subject.experiments[0].scans[0].data[header[16 : len(header)]]
                 )
+
+
+def test_mrd_data_modification(xnat_session, mrd_headers):
+    project = xnat_session.projects["mrd"]
+    subject = project.subjects[0]
+
+    xnat_header = "encoding/encodedSpace/matrixSize/x"
+    all_headers = subject.experiments[0].scans[0].data
+    assert all_headers[xnat_header] == 512
+    all_headers[xnat_header] = 256
+    assert all_headers[xnat_header] == 256
+    keys = list(all_headers.keys())
+    assert xnat_header in keys
+    new_header = "encoding/x"
+    all_headers[new_header] = all_headers.pop(xnat_header)
+    new_keys = list(all_headers.keys())
+    assert new_header in new_keys
+    assert xnat_header not in new_keys
+
+
+def test_mrd_data_deletion(xnat_session):
+    project = xnat_session.projects["mrd"]
+    experiments = project.subjects[0].experiments
+    assert len(experiments) == 1
+    experiments[0].delete()
+    assert len(experiments) == 0
