@@ -6,10 +6,31 @@ import time
 import requests
 import xnat
 import re
+import os
 
 
 @pytest.fixture(scope="session")
-def xnat_config(tmp_path_factory):
+def xnat_version():
+    try:
+        version = os.environ["XNAT_VERSION"]
+    except KeyError:
+        version = "1.9.2"
+
+    return version
+
+
+@pytest.fixture(scope="session")
+def xnat_container_service_version():
+    try:
+        version = os.environ["XNAT_CS_VERSION"]
+    except KeyError:
+        version = "3.7.2"
+
+    return version
+
+
+@pytest.fixture(scope="session")
+def xnat_config(tmp_path_factory, xnat_version, xnat_container_service_version):
     tmp_dir = tmp_path_factory.mktemp("data")
 
     return xnat4tests.Config(
@@ -17,8 +38,8 @@ def xnat_config(tmp_path_factory):
         docker_image="xnat_mrd_xnat4tests",
         docker_container="xnat_mrd_xnat4tests",
         build_args={
-            "xnat_version": "1.8.3",
-            "xnat_cs_plugin_version": "3.2.0",
+            "xnat_version": xnat_version,
+            "xnat_cs_plugin_version": xnat_container_service_version,
         },
     )
 

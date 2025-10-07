@@ -22,6 +22,21 @@ jobs:
     timeout-minutes: 10
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # Pairs of xnat version + xnat container service plugin version to test.
+        include:
+          - xnat-version: 1.9.2
+            xnat-cs-version: 3.7.2
+
+          - xnat-version: 1.8.3
+            xnat-cs-version: 3.1.0
+
+    name:
+      xnat ${{ matrix.xnat-version }} - container service ${{
+      matrix.xnat-cs-version }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -51,7 +66,12 @@ jobs:
           pip install -r python/tests/requirements.txt
 
       - name: Build plugin
+        env:
+          XNAT_VERSION: ${{ matrix.xnat-version }}
         run: ./gradlew clean xnatPluginJar
 
       - name: Run tests with pytest
+        env:
+          XNAT_VERSION: ${{ matrix.xnat-version }}
+          XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
         run: pytest
