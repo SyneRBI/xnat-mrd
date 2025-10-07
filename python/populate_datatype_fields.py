@@ -7,13 +7,15 @@
 # ]
 # ///
 
-import xnat
-from pathlib import Path
-from datetime import datetime
-from mrd_2_xnat import mrd_2_xnat
-import ismrmrd
 import logging
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Tuple
+
+import ismrmrd
+import xnat
+
+from mrd_2_xnat import mrd_2_xnat
 
 # Configure logging
 logging.basicConfig(

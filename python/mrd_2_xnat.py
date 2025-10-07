@@ -1,6 +1,7 @@
-import xmlschema
-from typing import Any, Tuple
 from pathlib import Path
+from typing import Any, Tuple
+
+import xmlschema
 
 
 def get_dict_values(dict: dict, key_list: list[Any]) -> Any:

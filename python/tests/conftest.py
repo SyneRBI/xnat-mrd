@@ -1,11 +1,12 @@
-from pathlib import Path
+import re
 import subprocess
-import pytest
-import xnat4tests
 import time
+from pathlib import Path
+
+import pytest
 import requests
 import xnat
-import re
+import xnat4tests
 
 
 @pytest.fixture(scope="session")
