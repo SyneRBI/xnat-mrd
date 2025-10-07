@@ -12,14 +12,14 @@ classifiers = [
 ]
 dependencies = ["ismrmrd", "xmlschema", "xnat"]
 description = "populate datatype fields"
-license = "MIT"
+license = "Apache-2.0"
 name = "xnatmrd"
 readme = "README.md"
 requires-python = "==3.13.*"
 version = "0.0.1"
 
 [project.optional-dependencies]
-dev = ["ismrmrd", "pre-commit", "pytest", "types-requests", "xmlschema", "xnat", "xnat4tests"]
+dev = ["pre-commit", "pytest", "types-requests", "xnat4tests"]
 
 [tool.pytest]
 
