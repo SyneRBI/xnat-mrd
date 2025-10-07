@@ -115,14 +115,14 @@ def test_mrd_data_upload(xnat_session, mrd_file_path, mrd_headers):
     assert len(project.subjects) == 1
     subject = project.subjects[0]
 
-  for header in mrd_headers:
-      if header[0:16] == "mrd:mrdScanData/":
-          xnat_header = header[16 : len(header)]
-          if mrd_headers[header] != "":
-              assert (
-                  mrd_headers[header]
-                  == subject.experiments[0].scans[0].data[xnat_header]
-              )
+    for header in mrd_headers:
+        if header[0:16] == "mrd:mrdScanData/":
+            xnat_header = header[16 : len(header)]
+            if mrd_headers[header] != "":
+                assert (
+                    mrd_headers[header]
+                    == subject.experiments[0].scans[0].data[xnat_header]
+                )
 
 
 def test_mrd_data_modification(xnat_session):
@@ -137,9 +137,8 @@ def test_mrd_data_modification(xnat_session):
     assert xnat_header in all_headers.keys()
     new_header = "encoding/x"
     all_headers[new_header] = all_headers.pop(xnat_header)
-    new_keys = list(all_headers.keys())
-    assert new_header in new_keys
-    assert xnat_header not in new_keys
+    assert new_header in all_headers.keys()
+    assert xnat_header not in all_headers.keys()
 
 
 def test_mrd_data_deletion(xnat_session):

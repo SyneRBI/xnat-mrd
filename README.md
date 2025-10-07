@@ -44,7 +44,7 @@ Follow the steps below to run the tests locally on your computer:
 - Install the python dependencies:
 
   ```bash
-  pip install -r python/tests/requirements.txt
+  pip install -e ./python[dev]
   ```
 
 - Build the plugin locally, [as described above](#build-the-plugin-locally).
@@ -110,5 +110,5 @@ populate_datatype_fields.py by running:
 uv run populate_datatype_fields.py
 ```
 
-However, the `requirements.txt` file is still available if running the code as
+However, the `pyproject.toml` file is still available if running the code as
 normal with python.
