@@ -57,7 +57,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: test-data
-          path: python/test-data
+          path: test-data
 
       - name: Run tests with pytest
         run: pytest
