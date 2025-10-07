@@ -1,6 +1,9 @@
 ---
 name: Run tests
 
+permissions:
+  actions: read
+
 on:
   push:
     branches:
