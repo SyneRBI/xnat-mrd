@@ -40,7 +40,6 @@ before building again with
 Follow the steps below to run the tests locally on your computer:
 
 - Install [Docker](https://www.docker.com/) on your computer.
-
 - Install the python dependencies:
 
   ```bash
@@ -56,6 +55,37 @@ Follow the steps below to run the tests locally on your computer:
   ```python
   pytest
   ```
+
+### Running tests locally with a different xnat version
+
+By default, the following versions will be used:
+
+- gradle will build the plugin using the xnat version `vXnat` from
+  `build.gradle`.
+- pytest will spin up xnat in a docker container using the default versions in
+  `python/tests/conftest.py` under `xnat_version` and
+  `xnat_container_service_version`.
+
+If you want to use a different version locally, you can override this by setting
+the following environment variables:
+
+```bash
+# Set xnat version
+export XNAT_VERSION=1.8.3
+
+# Set xnat container service plugin version
+export XNAT_CS_VERSION=3.1.0
+```
+
+Then repeat the last two steps above (building the plugin + running pytest).
+
+Note that Github actions are configured to automatically test multiple versions
+of xnat - so it may be simpler to add your required versions to
+`.github/workflows/test.yaml` in the `matrix` section. You will need to ensure
+your provided xnat container service plugin versions are compatible with the
+corresponding xnat version - the xnat docs provide a
+[compatibility matrix](https://wiki.xnat.org/container-service/container-service-compatibility-matrix)
+for this.
 
 ## Creating a new release
 
