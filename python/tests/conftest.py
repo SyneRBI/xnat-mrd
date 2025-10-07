@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 import time
@@ -7,8 +8,6 @@ import pytest
 import requests
 import xnat
 import xnat4tests
-import re
-import os
 
 
 @pytest.fixture(scope="session")
