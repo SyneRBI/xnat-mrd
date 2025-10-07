@@ -56,11 +56,5 @@ jobs:
       - name: Build plugin
         run: ./gradlew clean xnatPluginJar
 
-      - name: Download test data artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: test-data
-          path: test-data
-
       - name: Run tests with pytest
         run: pytest
