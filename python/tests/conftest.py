@@ -69,25 +69,42 @@ def xnat_session(xnat_config, jar_path):
     if not jar_path.exists():
         raise FileNotFoundError(f"Plugin JAR file not found at {jar_path}")
 
-    xnat4tests.start_xnat(xnat_config)
+    xnat4tests.start_xnat(xnat_config, rebuild=False, relaunch=False)
 
     # Install Mrd plugin by copying the jar into the container
-    try:
-        subprocess.run(
-            [
-                "docker",
-                "cp",
-                str(jar_path),
-                f"xnat_mrd_xnat4tests:{(plugin_path / jar_path.name).as_posix()}",
-            ],
-            check=True,
-        )
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(
-            f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
-        ) from e
 
-    xnat4tests.restart_xnat(xnat_config)
+    status = subprocess.run(
+        [
+            "docker",
+            "exec",
+            "xnat_mrd_xnat4tests",
+            "ls",
+            plugin_path.as_posix(),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    plugins_list = status.stdout.split("\n")
+
+    if jar_path.name not in plugins_list:
+        print("Jar not in plugins_list so restarting XNAT")
+        try:
+            subprocess.run(
+                [
+                    "docker",
+                    "cp",
+                    str(jar_path),
+                    f"xnat_mrd_xnat4tests:{(plugin_path / jar_path.name).as_posix()}",
+                ],
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
+            ) from e
+
+        xnat4tests.restart_xnat(xnat_config)
 
     # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
     # container startup.
@@ -108,5 +125,17 @@ def xnat_session(xnat_config, jar_path):
 
     yield session
 
-    session.disconnect()
-    xnat4tests.stop_xnat(xnat_config)
+    # Allow the docker container to be re-used when the XNAT4TEST_KEEP_INSTANCE environment variable is set.
+    # This is useful for fast local development, where we don't want to wait for the long Docker startup times
+    # between every test run.
+    if os.environ.get("XNAT4TEST_KEEP_INSTANCE", "False").lower() == "false":
+        session.disconnect()
+        xnat4tests.stop_xnat(xnat_config)
+    else:
+        project = session.projects["mrd"]
+        for subject in project.subjects.values():
+            session.delete(
+                path=f"/data/projects/{project.id}/subjects/{subject.label}",
+                query={"removeFiles": "True"},
+            )
+        session.disconnect()
