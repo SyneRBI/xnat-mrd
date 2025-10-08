@@ -87,6 +87,20 @@ corresponding xnat version - the xnat docs provide a
 [compatibility matrix](https://wiki.xnat.org/container-service/container-service-compatibility-matrix)
 for this.
 
+For faster development you can set an environment variable to keep the xnat4test
+instance after an initial run:
+
+```bash
+# Keep xnat4test instance
+export XNAT4TEST_KEEP_INSTANCE=True
+```
+
+If stopping tests before they're finished then you may want to delete your XNAT
+containers or stop them to avoid the subsequent running of the tests failing.
+
+The tests are only set-up for one project so if there is more than one project
+present then this will cause issues.
+
 ## Creating a new release
 
 Create a new tag in the form `vX.Y.Z` and push it to the repository e.g.
