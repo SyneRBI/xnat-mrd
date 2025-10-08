@@ -117,7 +117,7 @@ def xnat_session(xnat_config, jar_path):
     if not jar_path.exists():
         raise FileNotFoundError(f"Plugin JAR file not found at {jar_path}")
 
-    xnat4tests.start_xnat(xnat_config, rebuild=False, relaunch=False)
+    xnat4tests.start_xnat(xnat_config)
 
     # Install Mrd plugin by copying the jar into the container
 
