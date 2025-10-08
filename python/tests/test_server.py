@@ -1,11 +1,9 @@
 from pathlib import Path
 
-import ismrmrd
 import pytest
 import xmlschema
 import xnat
 
-from mrd_2_xnat import mrd_2_xnat
 from populate_datatype_fields import upload_mrd_data
 
 
@@ -55,28 +53,7 @@ def mrd_schema_fields():
     return component_paths
 
 
-@pytest.fixture
-def mrd_file_path():
-    """Provides the mrd_data filepath"""
-
-    mrd_data = (
-        Path(__file__).parents[2]
-        / "test-data"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
-    )
-
-    return mrd_data
-
-
-@pytest.fixture
-def mrd_headers(mrd_file_path):
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-        header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
-
-    return xnat_hdr
-
-
+@pytest.mark.usefixtures("remove_test_data")
 def test_mrdPlugin_installed(xnat_session, plugin_version):
     assert "mrdPlugin" in xnat_session.plugins
     mrd_plugin = xnat_session.plugins["mrdPlugin"]
@@ -84,6 +61,7 @@ def test_mrdPlugin_installed(xnat_session, plugin_version):
     assert mrd_plugin.name == "XNAT 1.8 ISMRMRD plugin"
 
 
+@pytest.mark.usefixtures("remove_test_data")
 def test_mrd_data_fields(xnat_session, mrd_schema_fields):
     """Confirm that all data fields defined in the mrd schema file - mrd.xsd - are registered in xnat"""
 
@@ -104,13 +82,10 @@ def test_mrd_data_fields(xnat_session, mrd_schema_fields):
     assert sorted(xnat_data_fields) == sorted(expected_data_fields)
 
 
+@pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
 def test_mrd_data_upload(xnat_session, mrd_file_path, mrd_headers):
     project_id = "mrd"
-
-    xnat_session.put(f"/data/archive/projects/{project_id}")
-
     project = xnat_session.projects[project_id]
-
     upload_mrd_data(xnat_session, mrd_file_path, project_id)
     assert len(project.subjects) == 1
     subject = project.subjects[0]
@@ -125,8 +100,11 @@ def test_mrd_data_upload(xnat_session, mrd_file_path, mrd_headers):
                 )
 
 
-def test_mrd_data_modification(xnat_session):
-    project = xnat_session.projects["mrd"]
+@pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
+def test_mrd_data_modification(xnat_session, mrd_file_path):
+    project_id = "mrd"
+    project = xnat_session.projects[project_id]
+    upload_mrd_data(xnat_session, mrd_file_path, project_id)
     subject = project.subjects[0]
 
     xnat_header = "encoding/encodedSpace/matrixSize/x"
@@ -141,8 +119,11 @@ def test_mrd_data_modification(xnat_session):
     assert xnat_header not in all_headers.keys()
 
 
-def test_mrd_data_deletion(xnat_session):
-    project = xnat_session.projects["mrd"]
+@pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
+def test_mrd_data_deletion(xnat_session, mrd_file_path):
+    project_id = "mrd"
+    project = xnat_session.projects[project_id]
+    upload_mrd_data(xnat_session, mrd_file_path, project_id)
     experiments = project.subjects[0].experiments
     assert len(experiments) == 1
     experiments[0].delete()

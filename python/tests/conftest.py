@@ -8,6 +8,30 @@ import pytest
 import requests
 import xnat
 import xnat4tests
+import ismrmrd
+from mrd_2_xnat import mrd_2_xnat
+
+
+@pytest.fixture
+def mrd_file_path():
+    """Provides the mrd_data filepath"""
+
+    mrd_data = (
+        Path(__file__).parents[2]
+        / "test-data"
+        / "ptb_resolutionphantom_fully_ismrmrd.h5"
+    )
+
+    return mrd_data
+
+
+@pytest.fixture
+def mrd_headers(mrd_file_path):
+    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+        header = dset.read_xml_header()
+        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
+
+    return xnat_hdr
 
 
 @pytest.fixture(scope="session")
@@ -28,6 +52,30 @@ def xnat_container_service_version():
         version = "3.7.2"
 
     return version
+
+
+@pytest.fixture
+def ensure_mrd_project(xnat_session):
+    project_id = "mrd"
+    if project_id not in xnat_session.projects:
+        xnat_session.put(f"/data/archive/projects/{project_id}")
+        xnat_session.projects.clearcache()
+    yield
+
+
+@pytest.fixture
+def remove_test_data(xnat_session):
+    yield
+    for project in list(xnat_session.projects):
+        for subject in list(project.subjects.values()):
+            try:
+                xnat_session.delete(
+                    path=f"/data/projects/{project.id}/subjects/{subject.label}",
+                    query={"removeFiles": "True"},
+                )
+            except xnat.exceptions.XNATResponseError as e:
+                print(f"Could not delete subject {subject.label}: {e}")
+        project.subjects.clearcache()
 
 
 @pytest.fixture(scope="session")
@@ -104,7 +152,8 @@ def xnat_session(xnat_config, jar_path):
                 f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
             ) from e
 
-        xnat4tests.restart_xnat(xnat_config)
+    xnat4tests.restart_xnat(xnat_config)
+    print("Waiting for XNAT to reload plugins...")
 
     # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
     # container startup.
@@ -132,10 +181,13 @@ def xnat_session(xnat_config, jar_path):
         session.disconnect()
         xnat4tests.stop_xnat(xnat_config)
     else:
-        project = session.projects["mrd"]
-        for subject in project.subjects.values():
-            session.delete(
-                path=f"/data/projects/{project.id}/subjects/{subject.label}",
-                query={"removeFiles": "True"},
-            )
+        for project in session.projects:
+            for subject in project.subjects.values():
+                try:
+                    session.delete(
+                        path=f"/data/projects/{project.id}/subjects/{subject.label}",
+                        query={"removeFiles": "True"},
+                    )
+                except xnat.exceptions.XNATResponseError as e:
+                    print(f"Could not delete subject {subject.label}: {e}")
         session.disconnect()
