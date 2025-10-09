@@ -62,19 +62,20 @@ def ensure_mrd_project(xnat_session):
         xnat_session.projects.clearcache()
 
 
+def delete_data(session):
+    for project in session.projects:
+        for subject in project.subjects.values():
+            session.delete(
+                path=f"/data/projects/{project.id}/subjects/{subject.label}",
+                query={"removeFiles": "True"},
+            )
+        project.subjects.clearcache()
+
+
 @pytest.fixture
 def remove_test_data(xnat_session):
     yield
-    for project in list(xnat_session.projects):
-        for subject in list(project.subjects.values()):
-            try:
-                xnat_session.delete(
-                    path=f"/data/projects/{project.id}/subjects/{subject.label}",
-                    query={"removeFiles": "True"},
-                )
-            except xnat.exceptions.XNATResponseError as e:
-                print(f"Could not delete subject {subject.label}: {e}")
-        project.subjects.clearcache()
+    delete_data(xnat_session)
 
 
 @pytest.fixture(scope="session")
@@ -182,13 +183,6 @@ def xnat_session(xnat_config, jar_path):
         session.disconnect()
         xnat4tests.stop_xnat(xnat_config)
     else:
-        for project in session.projects:
-            for subject in project.subjects.values():
-                try:
-                    session.delete(
-                        path=f"/data/projects/{project.id}/subjects/{subject.label}",
-                        query={"removeFiles": "True"},
-                    )
-                except xnat.exceptions.XNATResponseError as e:
-                    print(f"Could not delete subject {subject.label}: {e}")
+        delete_data(session)
+
         session.disconnect()
