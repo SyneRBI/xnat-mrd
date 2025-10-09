@@ -43,6 +43,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install pre-commit
 
-      - name: Run pre-commit
+      - name: Run pre-commit (autofix)
         run: |
-          pre-commit run --all-files --color always --verbose
+          pre-commit run --all-files --color always --verbose --hook-stage manual
+
+      - name: Commit and push auto-fixes for PRs
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: apply pre-commit auto-fixes"
+            git push origin HEAD:$PR_BRANCH
+          fi
