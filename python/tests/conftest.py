@@ -60,7 +60,6 @@ def ensure_mrd_project(xnat_session):
     if project_id not in xnat_session.projects:
         xnat_session.put(f"/data/archive/projects/{project_id}")
         xnat_session.projects.clearcache()
-    yield
 
 
 @pytest.fixture
@@ -140,7 +139,6 @@ def xnat_session(xnat_config, jar_path):
     plugins_list = status.stdout.split("\n")
 
     if jar_path.name not in plugins_list:
-        print("Jar not in plugins_list so restarting XNAT")
         try:
             subprocess.run(
                 [
@@ -157,7 +155,6 @@ def xnat_session(xnat_config, jar_path):
             ) from e
 
         xnat4tests.restart_xnat(xnat_config)
-    print("Waiting for XNAT to reload plugins...")
 
     # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
     # container startup.
