@@ -43,7 +43,7 @@ Follow the steps below to run the tests locally on your computer:
 - Install the python dependencies:
 
   ```bash
-  pip install -r python/tests/requirements.txt
+  pip install -e ./python[dev]
   ```
 
 - Build the plugin locally, [as described above](#build-the-plugin-locally).
@@ -55,6 +55,17 @@ Follow the steps below to run the tests locally on your computer:
   ```python
   pytest
   ```
+
+For faster development you can set an environment variable to keep the xnat4test
+instance after an initial run:
+
+```bash
+# Keep xnat4test instance
+export XNAT4TEST_KEEP_INSTANCE=True
+```
+
+If you build a new version of the plugin jar with `gradlew`, you will need to
+stop your container before running tests on it.
 
 ### Running tests locally with a different xnat version
 
@@ -140,5 +151,5 @@ populate_datatype_fields.py by running:
 uv run populate_datatype_fields.py
 ```
 
-However, the `requirements.txt` file is still available if running the code as
+However, the `pyproject.toml` file is still available if running the code as
 normal with python.
