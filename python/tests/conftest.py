@@ -79,11 +79,15 @@ def remove_test_data(xnat_session):
 
 
 @pytest.fixture(scope="session")
-def xnat_config(tmp_path_factory, xnat_version, xnat_container_service_version):
-    tmp_dir = tmp_path_factory.mktemp("data")
+def xnat_config(xnat_version, xnat_container_service_version):
+    xnat_root_dir = Path(__file__).parents[2] / ".xnat4tests" / "root"
+    docker_build_dir = Path(__file__).parents[2] / ".xnat4tests" / "build"
+    xnat_root_dir.mkdir(parents=True, exist_ok=True)
+    docker_build_dir.mkdir(parents=True, exist_ok=True)
 
     return xnat4tests.Config(
-        xnat_root_dir=tmp_dir,
+        xnat_root_dir=xnat_root_dir,
+        docker_build_dir=docker_build_dir,
         docker_image="xnat_mrd_xnat4tests",
         docker_container="xnat_mrd_xnat4tests",
         build_args={
@@ -152,7 +156,7 @@ def xnat_session(xnat_config, jar_path):
                 f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
             ) from e
 
-    xnat4tests.restart_xnat(xnat_config)
+        xnat4tests.restart_xnat(xnat_config)
     print("Waiting for XNAT to reload plugins...")
 
     # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
