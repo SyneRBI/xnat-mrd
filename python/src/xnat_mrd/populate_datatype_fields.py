@@ -1,12 +1,3 @@
-# /// script
-# requires-python = ">=3.8"
-# dependencies = [
-#     "xnat==0.7.2",
-#     "ismrmrd==1.14.2",
-#     "xmlschema==4.1.0",
-# ]
-# ///
-
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -169,7 +160,7 @@ def main():
     project_name = "mrd"
 
     mrd_file_path = (
-        Path(__file__).parent.parent
+        Path(__file__).parents[3]
         / "test-data"
         / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
