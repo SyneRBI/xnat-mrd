@@ -101,6 +101,25 @@ def test_mrd_data_upload(xnat_session, mrd_file_path, mrd_headers):
 
 
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
+def test_mrd_multidata_upload(
+    xnat_session, mrd_file_multidata_path, mrd_headers_multidata
+):
+    project_id = "mrd"
+    project = xnat_session.projects[project_id]
+    upload_mrd_data(xnat_session, mrd_file_multidata_path, project_id)
+    assert len(project.subjects) == 1
+    subject = project.subjects[0]
+    for header in mrd_headers_multidata:
+        if header[0:16] == "mrd:mrdScanData/":
+            xnat_header = header[16 : len(header)]
+            if mrd_headers_multidata[header] != "":
+                assert (
+                    mrd_headers_multidata[header]
+                    == subject.experiments[0].scans[0].data[xnat_header]
+                )
+
+
+@pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
 def test_mrd_data_modification(xnat_session, mrd_file_path):
     project_id = "mrd"
     project = xnat_session.projects[project_id]
