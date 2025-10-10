@@ -3,8 +3,11 @@ from pathlib import Path
 import pytest
 import xmlschema
 import xnat
+import ismrmrd
+import subprocess
 
 from populate_datatype_fields import upload_mrd_data
+from mrd_2_xnat import mrd_2_xnat
 
 
 @pytest.fixture
@@ -53,20 +56,33 @@ def mrd_schema_fields():
     return component_paths
 
 
+def verify_headers_match(mrd_file_path, scan):
+    """Check headers from a given mrd file match those in an xnat scan object"""
+
+    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+        header = dset.read_xml_header()
+        mrd_headers = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
+
+    for mrd_key, mrd_value in mrd_headers.items():
+        if (mrd_key[0:16] == "mrd:mrdScanData/") and (mrd_value != ""):
+            xnat_header = mrd_key[16:]
+            assert mrd_value == scan.data[xnat_header]
+
+
 @pytest.mark.usefixtures("remove_test_data")
-def test_mrdPlugin_installed(xnat_session, plugin_version):
-    assert "mrdPlugin" in xnat_session.plugins
-    mrd_plugin = xnat_session.plugins["mrdPlugin"]
+def test_mrdPlugin_installed(xnat_connection, plugin_version):
+    assert "mrdPlugin" in xnat_connection.session.plugins
+    mrd_plugin = xnat_connection.session.plugins["mrdPlugin"]
     assert mrd_plugin.version == f"{plugin_version}-xpl"
     assert mrd_plugin.name == "XNAT 1.8 ISMRMRD plugin"
 
 
 @pytest.mark.usefixtures("remove_test_data")
-def test_mrd_data_fields(xnat_session, mrd_schema_fields):
+def test_mrd_data_fields(xnat_connection, mrd_schema_fields):
     """Confirm that all data fields defined in the mrd schema file - mrd.xsd - are registered in xnat"""
 
     # get mrd data types from xnat session
-    inspector = xnat.inspect.Inspect(xnat_session)
+    inspector = xnat.inspect.Inspect(xnat_connection.session)
     assert "mrd:mrdScanData" in inspector.datatypes()
     xnat_data_fields = inspector.datafields("mrdScanData")
 
@@ -83,26 +99,21 @@ def test_mrd_data_fields(xnat_session, mrd_schema_fields):
 
 
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
-def test_mrd_data_upload(xnat_session, mrd_file_path, mrd_headers):
+def test_mrd_data_upload(xnat_connection, mrd_file_path):
     project_id = "mrd"
+    xnat_session = xnat_connection.session
     project = xnat_session.projects[project_id]
     upload_mrd_data(xnat_session, mrd_file_path, project_id)
     assert len(project.subjects) == 1
-    subject = project.subjects[0]
 
-    for header in mrd_headers:
-        if header[0:16] == "mrd:mrdScanData/":
-            xnat_header = header[16 : len(header)]
-            if mrd_headers[header] != "":
-                assert (
-                    mrd_headers[header]
-                    == subject.experiments[0].scans[0].data[xnat_header]
-                )
+    subject = project.subjects[0]
+    verify_headers_match(mrd_file_path, subject.experiments[0].scans[0])
 
 
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
-def test_mrd_data_modification(xnat_session, mrd_file_path):
+def test_mrd_data_modification(xnat_connection, mrd_file_path):
     project_id = "mrd"
+    xnat_session = xnat_connection.session
     project = xnat_session.projects[project_id]
     upload_mrd_data(xnat_session, mrd_file_path, project_id)
     subject = project.subjects[0]
@@ -120,11 +131,71 @@ def test_mrd_data_modification(xnat_session, mrd_file_path):
 
 
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
-def test_mrd_data_deletion(xnat_session, mrd_file_path):
+def test_mrd_data_deletion(xnat_connection, mrd_file_path):
     project_id = "mrd"
+    xnat_session = xnat_connection.session
     project = xnat_session.projects[project_id]
     upload_mrd_data(xnat_session, mrd_file_path, project_id)
+
     experiments = project.subjects[0].experiments
     assert len(experiments) == 1
     experiments[0].delete()
     assert len(experiments) == 0
+
+
+@pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
+def test_plugin_update(
+    xnat_connection, plugin_dir, jar_path, plugin_version, mrd_file_path
+):
+    """Test that updating the plugin (i.e. copying a new mrd-VERSION-xpl.jar into xnat + restarting) doesn't
+    affect previously uploaded data."""
+
+    xnat_session = xnat_connection.session
+    project = xnat_session.projects["mrd"]
+    upload_mrd_data(xnat_session, mrd_file_path, "mrd")
+
+    # Check plugin version and data is as expected
+    assert xnat_session.plugins["mrdPlugin"].version == f"{plugin_version}-xpl"
+    scan = project.subjects[0].experiments[0].scans[0]
+    verify_headers_match(mrd_file_path, scan)
+
+    # Re-name the plugin jar to another version (to mimic overwriting the existing plugin with a new version)
+    current_plugin_path = plugin_dir / jar_path.name
+    new_plugin_path = plugin_dir / "mrd-0.0.1-xpl.jar"
+
+    try:
+        subprocess.run(
+            [
+                "docker",
+                "exec",
+                "xnat_mrd_xnat4tests",
+                "mv",
+                current_plugin_path.as_posix(),
+                new_plugin_path.as_posix(),
+            ],
+            check=True,
+        )
+
+        xnat_connection.restart_xnat()
+        xnat_session = xnat_connection.session
+        project = xnat_session.projects["mrd"]
+
+        # Check no data has been changed after plugin update
+        assert xnat_session.plugins["mrdPlugin"].version == "0.0.1-xpl"
+        scan = project.subjects[0].experiments[0].scans[0]
+        verify_headers_match(mrd_file_path, scan)
+
+    finally:
+        # re-set plugin to original state
+        subprocess.run(
+            [
+                "docker",
+                "exec",
+                "xnat_mrd_xnat4tests",
+                "mv",
+                new_plugin_path.as_posix(),
+                current_plugin_path.as_posix(),
+            ],
+            check=True,
+        )
+        xnat_connection.restart_xnat()

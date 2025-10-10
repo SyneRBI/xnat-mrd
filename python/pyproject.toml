@@ -22,6 +22,3 @@ version = "0.0.1"
 dev = ["pre-commit", "pytest", "types-requests", "xnat4tests"]
 
 [tool.pytest]
-
-[tool.setuptools]
-py-modules = ["mrd_2_xnat", "populate_datatype_fields"]

@@ -1,15 +1,12 @@
 import os
 import re
 import subprocess
-import time
 from pathlib import Path
 
 import pytest
-import requests
-import xnat
 import xnat4tests
-import ismrmrd
-from mrd_2_xnat import mrd_2_xnat
+
+from utils import delete_data, XnatConnection
 
 
 @pytest.fixture
@@ -23,15 +20,6 @@ def mrd_file_path():
     )
 
     return mrd_data
-
-
-@pytest.fixture
-def mrd_headers(mrd_file_path):
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-        header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
-
-    return xnat_hdr
 
 
 @pytest.fixture(scope="session")
@@ -55,27 +43,18 @@ def xnat_container_service_version():
 
 
 @pytest.fixture
-def ensure_mrd_project(xnat_session):
+def ensure_mrd_project(xnat_connection):
     project_id = "mrd"
+    xnat_session = xnat_connection.session
     if project_id not in xnat_session.projects:
         xnat_session.put(f"/data/archive/projects/{project_id}")
         xnat_session.projects.clearcache()
 
 
-def delete_data(session):
-    for project in session.projects:
-        for subject in project.subjects.values():
-            session.delete(
-                path=f"/data/projects/{project.id}/subjects/{subject.label}",
-                query={"removeFiles": "True"},
-            )
-        project.subjects.clearcache()
-
-
 @pytest.fixture
-def remove_test_data(xnat_session):
+def remove_test_data(xnat_connection):
     yield
-    delete_data(xnat_session)
+    delete_data(xnat_connection.session)
 
 
 @pytest.fixture(scope="session")
@@ -99,8 +78,22 @@ def xnat_config(xnat_version, xnat_container_service_version):
 
 @pytest.fixture(scope="session")
 def jar_path():
+    """Path of jar built by gradlew"""
+
     jar_dir = Path(__file__).parents[2] / "build" / "libs"
-    return list(jar_dir.glob("mrd-*xpl.jar"))[0]
+    jar_path = list(jar_dir.glob("mrd-*xpl.jar"))[0]
+
+    if not jar_path.exists():
+        raise FileNotFoundError(f"Plugin JAR file not found at {jar_path}")
+
+    return jar_path
+
+
+@pytest.fixture(scope="session")
+def plugin_dir():
+    """Path to plugin directory inside the container"""
+
+    return Path("/data/xnat/home/plugins")
 
 
 @pytest.fixture(scope="session")
@@ -116,22 +109,18 @@ def plugin_version(jar_path):
 
 
 @pytest.fixture(scope="session")
-def xnat_session(xnat_config, jar_path):
-    plugin_path = Path("/data/xnat/home/plugins")
-    if not jar_path.exists():
-        raise FileNotFoundError(f"Plugin JAR file not found at {jar_path}")
-
+def xnat_connection(xnat_config, jar_path, plugin_dir):
     xnat4tests.start_xnat(xnat_config)
+    connection = XnatConnection(xnat_config)
 
     # Install Mrd plugin by copying the jar into the container
-
     status = subprocess.run(
         [
             "docker",
             "exec",
             "xnat_mrd_xnat4tests",
             "ls",
-            plugin_path.as_posix(),
+            plugin_dir.as_posix(),
         ],
         check=True,
         capture_output=True,
@@ -146,7 +135,7 @@ def xnat_session(xnat_config, jar_path):
                     "docker",
                     "cp",
                     str(jar_path),
-                    f"xnat_mrd_xnat4tests:{(plugin_path / jar_path.name).as_posix()}",
+                    f"xnat_mrd_xnat4tests:{(plugin_dir / jar_path.name).as_posix()}",
                 ],
                 check=True,
             )
@@ -155,34 +144,16 @@ def xnat_session(xnat_config, jar_path):
                 f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
             ) from e
 
-        xnat4tests.restart_xnat(xnat_config)
+        connection.restart_xnat()
 
-    # Wait for XNAT to be available. This is based on code in xnat4tests.start_xnat that waits for the initial
-    # container startup.
-    for attempts in range(xnat_config.connection_attempts):
-        try:
-            session = xnat4tests.connect(xnat_config)
-        except (
-            xnat.exceptions.XNATError,
-            requests.ConnectionError,
-            requests.ReadTimeout,
-        ):
-            if attempts == xnat_config.connection_attempts:
-                raise RuntimeError("XNAT did not start in time")
-            else:
-                time.sleep(xnat_config.connection_attempt_sleep)
-        else:
-            break
-
-    yield session
+    yield connection
 
     # Allow the docker container to be re-used when the XNAT4TEST_KEEP_INSTANCE environment variable is set.
     # This is useful for fast local development, where we don't want to wait for the long Docker startup times
     # between every test run.
     if os.environ.get("XNAT4TEST_KEEP_INSTANCE", "False").lower() == "false":
-        session.disconnect()
+        connection.close()
         xnat4tests.stop_xnat(xnat_config)
     else:
-        delete_data(session)
-
-        session.disconnect()
+        delete_data(connection.session)
+        connection.close()
