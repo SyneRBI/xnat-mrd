@@ -10,6 +10,7 @@ import xnat
 import xnat4tests
 import ismrmrd
 from mrd_2_xnat import mrd_2_xnat
+from fetch_datasets import get_multidata
 
 
 @pytest.fixture
@@ -29,7 +30,7 @@ def mrd_file_path():
 def mrd_file_multidata_path():
     """Provides the mrd_data filepath"""
 
-    mrd_data = Path(__file__).parents[2] / "test-data" / "cart_t1_msense_integrated.mrd"
+    mrd_data = get_multidata()
 
     return mrd_data
 
