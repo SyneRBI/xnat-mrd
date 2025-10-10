@@ -73,4 +73,5 @@ jobs:
         env:
           XNAT_VERSION: ${{ matrix.xnat-version }}
           XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
-        run: pytest
+        working-directory: ./python
+        run: pytest --strict-markers
