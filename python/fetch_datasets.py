@@ -1,9 +1,7 @@
-import pdb
-import numpy.typing as npt
 import pooch
-import h5py
 from pathlib import Path
 import shutil
+from typing import Optional
 
 ZENODO = pooch.create(
     # Use the default cache folder for the operating system
@@ -14,8 +12,9 @@ ZENODO = pooch.create(
 ZENODO.load_registry_from_doi()
 
 
-def _fetch_from_zenodo(image_name: str, local_dir: str = None) -> None:
-    """Fetch mrd file from zenodo (if not already cached), and return as a 3D numpy array"""
+def _fetch_from_zenodo(image_name: str, local_dir: Optional[Path] = None) -> Path:
+    """Fetch mrd file from zenodo (if not already cached), and return the file path where
+    data is downloaded"""
 
     ZENODO.fetch(image_name)
     image_path = ZENODO.path / image_name
@@ -25,10 +24,13 @@ def _fetch_from_zenodo(image_name: str, local_dir: str = None) -> None:
         local_path = Path(local_dir) / image_name
         shutil.copy(image_path, local_path)
         image_path = local_path
-        
+
     return image_path
 
 
-def get_multidata() -> None:
+def get_multidata() -> Path:
     """Fetch mrd file with multiple datasets"""
-    return _fetch_from_zenodo("cart_t1_msense_integrated.mrd", local_dir=Path(__file__).parents[1] / "test-data")
+    return _fetch_from_zenodo(
+        "cart_t1_msense_integrated.mrd",
+        local_dir=Path(__file__).parents[1] / "test-data",
+    )
