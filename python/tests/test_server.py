@@ -138,6 +138,7 @@ def test_mrd_data_deletion(xnat_connection, mrd_file_path):
     assert len(experiments) == 0
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
 def test_plugin_update(
     xnat_connection, plugin_dir, jar_path, plugin_version, mrd_file_path
