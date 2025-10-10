@@ -16,6 +16,7 @@ import ismrmrd
 import xnat
 
 from mrd_2_xnat import mrd_2_xnat
+import h5py
 
 # Configure logging
 logging.basicConfig(
@@ -28,6 +29,17 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+def list_ismrmrd_datasets(mrd_file_path: Path) -> Tuple[list[str], bool]:
+    with h5py.File(mrd_file_path, "r") as f:
+        groups = list(f.keys())
+        if len(groups) > 1:
+            multidata = True
+            return groups, multidata
+        else:
+            multidata = False
+            return [groups[0]], multidata
 
 
 def upload_mrd_data(
@@ -46,8 +58,13 @@ def upload_mrd_data(
     xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
     experiment = add_exam(xnat_subject, time_id, experiment_date)
 
+    dataset_names, multidata = list_ismrmrd_datasets(mrd_file_path)
+    if multidata:
+        dataset_name = dataset_names[1]
+    else:
+        dataset_name = dataset_names[0]
     # Load MRD header and convert to XNAT format
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+    with ismrmrd.Dataset(mrd_file_path, dataset_name, create_if_needed=False) as dset:
         header = dset.read_xml_header()
         xnat_hdr = mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
 
@@ -165,9 +182,7 @@ def main():
     project_name = "mrd"
 
     mrd_file_path = (
-        Path(__file__).parent.parent
-        / "test-data"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
+        Path(__file__).parent.parent / "test-data" / "cart_t1_msense_integrated.mrd"
     )
 
     # Use context manager for automatic connection cleanup

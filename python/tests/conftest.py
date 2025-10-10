@@ -26,8 +26,28 @@ def mrd_file_path():
 
 
 @pytest.fixture
+def mrd_file_multidata_path():
+    """Provides the mrd_data filepath"""
+
+    mrd_data = Path(__file__).parents[2] / "test-data" / "cart_t1_msense_integrated.mrd"
+
+    return mrd_data
+
+
+@pytest.fixture
 def mrd_headers(mrd_file_path):
     with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+        header = dset.read_xml_header()
+        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
+
+    return xnat_hdr
+
+
+@pytest.fixture
+def mrd_headers_multidata(mrd_file_multidata_path):
+    with ismrmrd.Dataset(
+        mrd_file_multidata_path, "dataset_2", create_if_needed=False
+    ) as dset:
         header = dset.read_xml_header()
         xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
 
