@@ -72,6 +72,7 @@ def test_mrdPlugin_installed(xnat_connection, plugin_version):
     assert mrd_plugin.name == "XNAT 1.8 ISMRMRD plugin"
 
 
+@pytest.mark.filterwarnings("ignore:Import of namespace")
 @pytest.mark.usefixtures("remove_test_data")
 def test_mrd_data_fields(xnat_connection, mrd_schema_fields):
     """Confirm that all data fields defined in the mrd schema file - mrd.xsd - are registered in xnat"""
