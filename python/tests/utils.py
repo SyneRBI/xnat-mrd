@@ -11,7 +11,7 @@ class XnatConnection:
     new connection in the case of xnat restart.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: xnat4tests.Config):
         self.config = config
         self.session = None
         self._connect_to_xnat()
@@ -46,7 +46,7 @@ class XnatConnection:
         self.session = session
 
 
-def delete_data(session) -> None:
+def delete_data(session: xnat.XNATSession) -> None:
     for project in session.projects:
         for subject in project.subjects.values():
             session.delete(

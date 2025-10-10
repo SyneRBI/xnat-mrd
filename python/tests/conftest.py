@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import xnat4tests
 
-from utils import delete_data, XnatConnection
+from tests.utils import delete_data, XnatConnection
 
 
 @pytest.fixture

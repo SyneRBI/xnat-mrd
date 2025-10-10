@@ -15,7 +15,7 @@ from typing import Any, Tuple
 import ismrmrd
 import xnat
 
-from mrd_2_xnat import mrd_2_xnat
+from xnat_mrd.mrd_2_xnat import mrd_2_xnat
 
 # Configure logging
 logging.basicConfig(
@@ -46,12 +46,16 @@ def upload_mrd_data(
     xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
     experiment = add_exam(xnat_subject, time_id, experiment_date)
 
-    # Load MRD header and convert to XNAT format
+    xnat_hdr = read_mrd_header(mrd_file_path)
+    add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+
+
+def read_mrd_header(mrd_file_path: Path) -> dict[str, Any]:
+    """Load MRD header and convert to XNAT format"""
+
     with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
         header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
-
-    add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+        return mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
 
 
 def verify_project_exists(session: xnat.XNATSession, project_name: str) -> Any:

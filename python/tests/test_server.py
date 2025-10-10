@@ -3,11 +3,9 @@ from pathlib import Path
 import pytest
 import xmlschema
 import xnat
-import ismrmrd
 import subprocess
 
-from populate_datatype_fields import upload_mrd_data
-from mrd_2_xnat import mrd_2_xnat
+from xnat_mrd.populate_datatype_fields import upload_mrd_data, read_mrd_header
 
 
 @pytest.fixture
@@ -59,10 +57,7 @@ def mrd_schema_fields():
 def verify_headers_match(mrd_file_path, scan):
     """Check headers from a given mrd file match those in an xnat scan object"""
 
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-        header = dset.read_xml_header()
-        mrd_headers = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
-
+    mrd_headers = read_mrd_header(mrd_file_path)
     for mrd_key, mrd_value in mrd_headers.items():
         if (mrd_key[0:16] == "mrd:mrdScanData/") and (mrd_value != ""):
             xnat_header = mrd_key[16:]
