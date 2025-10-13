@@ -165,8 +165,8 @@ pre-commit uninstall
 
 ## Requirements
 
-If using uv then you can take advantage of the inline requirements at the top of
-populate_datatype_fields.py by running:
+If using uv, you can install required dependencies and run
+`populate_datatype_fields.py` with:
 
 ```shell
 
