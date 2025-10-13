@@ -190,6 +190,8 @@ To increase the default version of XNAT to build with, you will need to update:
   container service version are compatible with each other, by referring to the
   xnat
   [compatibility matrix](https://wiki.xnat.org/container-service/container-service-compatibility-matrix)).
+- The list of xnat versions you want to test with github actions under `matrix`
+  inside `.github/workflows/test.yaml`
 
 ### Plugins used in build.gradle
 
