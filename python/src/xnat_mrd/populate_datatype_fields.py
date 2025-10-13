@@ -61,6 +61,7 @@ def upload_mrd_data(
     xnat_hdr = read_mrd_header(mrd_file_path, dataset_name)
     add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
 
+
 def read_mrd_header(mrd_file_path: Path, dataset_name: str) -> dict[str, Any]:
     """Load MRD header and convert to XNAT format"""
 
