@@ -1,12 +1,3 @@
-# /// script
-# requires-python = ">=3.8"
-# dependencies = [
-#     "xnat==0.7.2",
-#     "ismrmrd==1.14.2",
-#     "xmlschema==4.1.0",
-# ]
-# ///
-
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -15,9 +6,9 @@ from typing import Any, Tuple
 import ismrmrd
 import xnat
 
-from mrd_2_xnat import mrd_2_xnat
 import h5py
-from fetch_datasets import get_multidata
+from xnat_mrd.fetch_datasets import get_multidata
+from xnat_mrd.mrd_2_xnat import mrd_2_xnat
 
 # Configure logging
 logging.basicConfig(
@@ -66,12 +57,16 @@ def upload_mrd_data(
         dataset_name = dataset_names[1]
     else:
         dataset_name = dataset_names[0]
-    # Load MRD header and convert to XNAT format
+
+    xnat_hdr = read_mrd_header(mrd_file_path, dataset_name)
+    add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+
+def read_mrd_header(mrd_file_path: Path, dataset_name: str) -> dict[str, Any]:
+    """Load MRD header and convert to XNAT format"""
+
     with ismrmrd.Dataset(mrd_file_path, dataset_name, create_if_needed=False) as dset:
         header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
-
-    add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
+        return mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
 
 
 def verify_project_exists(session: xnat.XNATSession, project_name: str) -> Any:
@@ -185,7 +180,9 @@ def main():
     project_name = "mrd"
 
     mrd_file_path = (
-        Path(__file__).parent.parent / "test-data" / "cart_t1_msense_integrated.mrd"
+        Path(__file__).parents[3]
+        / "test-data"
+        / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
 
     # Use context manager for automatic connection cleanup
