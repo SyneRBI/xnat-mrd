@@ -32,5 +32,5 @@ def get_multidata() -> Path:
     """Fetch mrd file with multiple datasets"""
     return _fetch_from_zenodo(
         "cart_t1_msense_integrated.mrd",
-        local_dir=Path(__file__).parents[1] / "test-data",
+        local_dir=Path(__file__).parents[3] / "test-data",
     )

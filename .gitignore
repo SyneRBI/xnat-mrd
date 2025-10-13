@@ -19,6 +19,7 @@ gradle-app.setting
 __pycache__/
 *.egg-info/
 .xnat4tests/
+test-data/cart_t1_msense_integrated.mrd
 
 # Log files
 *.log
