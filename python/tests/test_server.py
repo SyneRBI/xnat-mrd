@@ -54,7 +54,7 @@ def mrd_schema_fields():
     return component_paths
 
 
-def verify_headers_match(mrd_file_path, scan, dataset_name):
+def verify_headers_match(mrd_file_path, scan, dataset_name="dataset"):
     """Check headers from a given mrd file match those in an xnat scan object"""
 
     mrd_headers = read_mrd_header(mrd_file_path, dataset_name)
@@ -103,7 +103,7 @@ def test_mrd_data_upload(xnat_connection, mrd_file_path):
     assert len(project.subjects) == 1
 
     subject = project.subjects[0]
-    verify_headers_match(mrd_file_path, subject.experiments[0].scans[0], "dataset")
+    verify_headers_match(mrd_file_path, subject.experiments[0].scans[0])
 
 
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
@@ -167,7 +167,7 @@ def test_plugin_update(
     # Check plugin version and data is as expected
     assert xnat_session.plugins["mrdPlugin"].version == f"{plugin_version}-xpl"
     scan = project.subjects[0].experiments[0].scans[0]
-    verify_headers_match(mrd_file_path, scan, "dataset")
+    verify_headers_match(mrd_file_path, scan)
 
     # Re-name the plugin jar to another version (to mimic overwriting the existing plugin with a new version)
     current_plugin_path = plugin_dir / jar_path.name
@@ -193,7 +193,7 @@ def test_plugin_update(
         # Check no data has been changed after plugin update
         assert xnat_session.plugins["mrdPlugin"].version == "0.0.1-xpl"
         scan = project.subjects[0].experiments[0].scans[0]
-        verify_headers_match(mrd_file_path, scan, "dataset")
+        verify_headers_match(mrd_file_path, scan)
 
     finally:
         # re-set plugin to original state
