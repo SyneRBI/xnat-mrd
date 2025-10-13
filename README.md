@@ -66,9 +66,17 @@ Follow the steps below to run the tests locally on your computer:
 
 - Run pytest
 
-  ```python
+  ```bash
+  cd python
   pytest
   ```
+
+To skip slow running tests (e.g. those that require restarts of the xnat
+instance) use:
+
+```bash
+pytest -m "not slow"
+```
 
 For faster development you can set an environment variable to keep the xnat4test
 instance after an initial run:
@@ -157,8 +165,8 @@ pre-commit uninstall
 
 ## Requirements
 
-If using uv then you can take advantage of the inline requirements at the top of
-populate_datatype_fields.py by running:
+If using uv, you can install required dependencies and run
+`populate_datatype_fields.py` with:
 
 ```shell
 

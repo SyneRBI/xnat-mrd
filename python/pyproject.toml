@@ -21,7 +21,7 @@ version = "0.0.1"
 [project.optional-dependencies]
 dev = ["pre-commit", "pytest", "types-requests", "xnat4tests"]
 
-[tool.pytest]
-
-[tool.setuptools]
-py-modules = ["mrd_2_xnat", "populate_datatype_fields"]
+[tool.pytest.ini_options]
+markers = [
+    "slow: mark test as slow.",
+]
