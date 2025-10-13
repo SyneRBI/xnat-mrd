@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pytest
 import xnat4tests
-import ismrmrd
-from xnat_mrd.mrd_2_xnat import mrd_2_xnat
 from xnat_mrd.fetch_datasets import get_multidata
 
 from tests.utils import delete_data, XnatConnection
@@ -32,26 +30,6 @@ def mrd_file_multidata_path():
     mrd_data = get_multidata()
 
     return mrd_data
-
-
-@pytest.fixture
-def mrd_headers(mrd_file_path):
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
-        header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
-
-    return xnat_hdr
-
-
-@pytest.fixture
-def mrd_headers_multidata(mrd_file_multidata_path):
-    with ismrmrd.Dataset(
-        mrd_file_multidata_path, "dataset_2", create_if_needed=False
-    ) as dset:
-        header = dset.read_xml_header()
-        xnat_hdr = mrd_2_xnat(header, Path(__file__).parents[1] / "ismrmrd.xsd")
-
-    return xnat_hdr
 
 
 @pytest.fixture(scope="session")
