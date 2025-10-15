@@ -18,7 +18,7 @@ plugins {
     id "jacoco"
     id "java"
     id "com.palantir.git-version" version "3.1.0"
-    id "io.franzbecker.gradle-lombok" version "4.0.0"
+    id "io.franzbecker.gradle-lombok" version "5.0.0"
     id "io.spring.dependency-management" version "1.1.6"
     id "org.nrg.xnat.build.xnat-data-builder" version "${vXnat}"
     id "maven-publish"
@@ -199,7 +199,7 @@ tasks.withType(Jar) {
 
 // This builds a sources jar that pulls in the manifest with VCS info from above.
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier "sources"
+    archiveClassifier.set "sources"
     manifest {
         from gitManifest
     }
@@ -208,7 +208,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 
 // This builds a javadoc jar that pulls in the manifest with VCS info from above.
 task javadocJar(type: Jar) {
-    classifier "javadoc"
+    archiveClassifier.set "javadoc"
     manifest {
         from gitManifest
     }

@@ -175,3 +175,56 @@ uv run populate_datatype_fields.py
 
 However, the `pyproject.toml` file is still available if running the code as
 normal with python.
+
+## Version updates
+
+Currently, versions of plugins / gradle are updated manually when required:
+
+### XNAT
+
+To increase the default version of XNAT to build with, you will need to update:
+
+- `vXNAT` in the `buildscript` section at the top of `build.gradle`
+- `xnat_version` and `xnat_container_service_version` under
+  `python/tests/conftest.py` (as mentioned above, make sure the xnat version +
+  container service version are compatible with each other, by referring to the
+  xnat
+  [compatibility matrix](https://wiki.xnat.org/container-service/container-service-compatibility-matrix)).
+- The list of xnat versions you want to test with github actions under `matrix`
+  inside `.github/workflows/test.yaml`
+
+### Plugins used in build.gradle
+
+Various gradle plugins are used during the build process, and are listed in the
+`plugins` section of `build.gradle` e.g. "com.palantir.git-version". Usually,
+these versions are updated to match those used in the latest
+[xnat-template-plugin](https://bitbucket.org/xnatx/xnat-template-plugin/src/master/build.gradle).
+
+### Gradle / gradlew
+
+Usually, we keep the `gradle` version matched to that used in the latest
+[xnat-template-plugin](https://bitbucket.org/xnatx/xnat-template-plugin/src/master/gradle/wrapper/gradle-wrapper.properties).
+The version is listed under `/gradle/wrapper/gradle-wrapper.properties` on the
+`distributionUrl` line.
+
+You can check your local version of `gradlew` with:
+
+```bash
+./gradlew --version
+```
+
+To update, run the following command with the required version:
+
+```bash
+# e.g. to update to 8.10.2
+./gradlew wrapper --gradle-version 8.10.2
+```
+
+This will update most gradle / gradlew files, but to fully update you will need
+to run the same command **a second time**. (this will also update
+`/gradle/wrapper/gradle-wrapper.jar`).
+
+You may encounter some errors on update, if certain features of your
+`build.gradle` have been deprecated in new `gradle` versions. To fix this, refer
+to the `build.gradle` in the `xnat-template-plugin`, and read the relevant
+[gradle upgrade guides](https://docs.gradle.org/current/userguide/upgrading_version_7.html).
