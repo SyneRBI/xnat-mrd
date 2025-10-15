@@ -62,15 +62,10 @@ repos:
         args:
           - --force-exclude
           - --hidden
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.32
     hooks:
-      - id: markdownlint
-        args:
-          - --disable=MD013
-          - --disable=MD033
-          - --dot
-          - --fix
+      - id: pymarkdown
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
@@ -85,8 +80,8 @@ repos:
           - --in-place
           - --spaces-indent-inline-array=4
           - --trailing-comma-inline-array
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.6.2
     hooks:
       - id: prettier
         args:
