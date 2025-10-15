@@ -76,8 +76,7 @@ jobs:
         with:
           path: xnat_mrd_xnat4tests_container.tar
           key: >-
-            xnat-container-${{ matrix.xnat-version }}-${{matrix.xnat-cs-version}}-${{ hashFiles('python/tests/conftest.py','.xnat4tests/**') }}
-
+            xnat-container-${{ matrix.xnat-version }}-${{matrix.xnat-cs-version}}-${{ hashFiles('python/tests/conftest.py') }}
       - name: Load Docker container from cache
         if: steps.cache-docker-container.outputs.cache-hit == 'true'
         run: docker load -i xnat_mrd_xnat4tests_container.tar
