@@ -7,7 +7,7 @@ import ismrmrd
 import xnat
 
 import h5py
-from xnat_mrd.fetch_datasets import get_multidata
+from xnat_mrd.fetch_datasets import get_singledata
 from xnat_mrd.mrd_2_xnat import mrd_2_xnat
 
 # Configure logging
@@ -41,13 +41,6 @@ def upload_mrd_data(
     scan_id: str = "cart_cine_scan",
     experiment_date: str = "2022-05-04",
 ) -> None:
-    if mrd_file_path.exists():
-        logger.info(f"MRD file path: {mrd_file_path}")
-    elif not mrd_file_path.exists():
-        mrd_file_path = get_multidata()
-    else:
-        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
-
     xnat_project = verify_project_exists(xnat_session, project_name)
     xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
     experiment = add_exam(xnat_subject, time_id, experiment_date)
@@ -189,6 +182,13 @@ def main():
         / "test-data"
         / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
+
+    if mrd_file_path.exists():
+        logger.info(f"MRD file path: {mrd_file_path}")
+    elif not mrd_file_path.exists():
+        mrd_file_path = get_singledata()
+    else:
+        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
 
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:
