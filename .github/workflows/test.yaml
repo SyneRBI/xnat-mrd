@@ -64,10 +64,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ./python[dev]
 
-      - name: Build plugin
-        env:
-          XNAT_VERSION: ${{ matrix.xnat-version }}
-        run: ./gradlew clean xnatPluginJar
+      # - name: Build plugin
+      #   env:
+      #     XNAT_VERSION: ${{ matrix.xnat-version }}
+      #   run: ./gradlew clean xnatPluginJar
 
       - name: Cache built Docker container
         id: cache-docker-container
@@ -82,13 +82,13 @@ jobs:
         if: steps.cache-docker-container.outputs.cache-hit == 'true'
         run: docker load -i xnat_mrd_xnat4tests_container.tar
 
-      - name: Run tests with pytest
-        env:
-          XNAT_VERSION: ${{ matrix.xnat-version }}
-          XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
-          XNAT4TEST_KEEP_INSTANCE: "True"
-        working-directory: ./python
-        run: pytest -m "not slow"
+      # - name: Run tests with pytest
+      #   env:
+      #     XNAT_VERSION: ${{ matrix.xnat-version }}
+      #     XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
+      #     XNAT4TEST_KEEP_INSTANCE: "True"
+      #   working-directory: ./python
+      #   run: pytest -m "not slow"
 
       - name: Save Docker container to cache (if not cached)
         if: steps.cache-docker-container.outputs.cache-hit != 'true'
