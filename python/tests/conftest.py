@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 import xnat4tests
-from xnat_mrd.fetch_datasets import get_multidata
+from xnat_mrd.fetch_datasets import get_singledata, get_multidata
 
 from tests.utils import delete_data, XnatConnection
 
@@ -14,7 +14,7 @@ from tests.utils import delete_data, XnatConnection
 def mrd_file_path():
     """Provides the mrd_data filepath"""
 
-    mrd_data = get_multidata()
+    mrd_data = get_singledata()
 
     return mrd_data
 
