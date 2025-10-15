@@ -16,9 +16,7 @@ def _fetch_from_zenodo(image_name: str, local_dir: Optional[Path] = None) -> Pat
     """Fetch mrd file from zenodo (if not already cached), and return the file path where
     data is downloaded"""
 
-    ZENODO.fetch(image_name)
-    image_path = ZENODO.path / image_name
-    print(image_path)
+    image_path = Path(ZENODO.fetch(image_name))
     # Optionally copy to local_dir
     if local_dir:
         local_path = Path(local_dir) / image_name
