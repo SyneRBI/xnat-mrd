@@ -28,10 +28,10 @@ def list_ismrmrd_datasets(mrd_file_path: Path) -> Tuple[list[str], bool]:
         groups = list(f.keys())
         if len(groups) > 1:
             multidata = True
-            return groups, multidata
         else:
             multidata = False
-            return groups, multidata
+
+        return groups, multidata
 
 
 def upload_mrd_data(
@@ -180,6 +180,8 @@ def main():
     mrd_file_path = (
         Path(__file__).parents[3]
         / "test-data"
+        / "PTB_ACRPhantom_GRAPPA.zip.unzip"
+        / "PTB_ACRPhantom_GRAPPA"
         / "ptb_resolutionphantom_fully_ismrmrd.h5"
     )
 
@@ -187,8 +189,6 @@ def main():
         logger.info(f"MRD file path: {mrd_file_path}")
     elif not mrd_file_path.exists():
         mrd_file_path = get_singledata()
-    else:
-        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
 
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:

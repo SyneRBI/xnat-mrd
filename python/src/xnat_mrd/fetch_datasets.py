@@ -24,7 +24,7 @@ def _fetch_from_zenodo(
     if zip_file:
         unpack = pooch.Unzip(members=[zip_file])
         ZENODO.fetch(f"{zip_file}.zip", processor=unpack)
-        image_path = ZENODO.path / f"{zip_file}.zip.unzip" / image_name
+        image_path = ZENODO.path / f"{zip_file}.zip.unzip" / zip_file / image_name
     else:
         image_path = Path(ZENODO.fetch(image_name))
 
