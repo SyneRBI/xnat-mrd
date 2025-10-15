@@ -69,14 +69,14 @@ jobs:
           XNAT_VERSION: ${{ matrix.xnat-version }}
         run: ./gradlew clean xnatPluginJar
 
+      # prettier-ignore
       - name: Cache built Docker container
         id: cache-docker-container
         uses: actions/cache@v4
         with:
           path: xnat_mrd_xnat4tests_container.tar
-          key: |
-            xnat-container-${{ matrix.xnat-version }}-${{ matrix.xnat-cs-version
-            }}-${{ hashFiles('python/tests/conftest.py', '.xnat4tests/**') }}
+          key: >-
+            xnat-container-${{ matrix.xnat-version }}-${{matrix.xnat-cs-version}}-${{ hashFiles('python/tests/conftest.py','.xnat4tests/**') }}
 
       - name: Load Docker container from cache
         if: steps.cache-docker-container.outputs.cache-hit == 'true'
