@@ -88,7 +88,7 @@ jobs:
           XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
           XNAT4TEST_KEEP_INSTANCE: "True"
         working-directory: ./python
-        run: pytest python/tests/test_server.py::test_mrdPlugin_installed
+        run: pytest tests/test_server.py::test_mrdPlugin_installed
 
       - name: Save Docker container to cache (if not cached)
         if: steps.cache-docker-container.outputs.cache-hit != 'true'
