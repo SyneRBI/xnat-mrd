@@ -64,6 +64,8 @@ jobs:
         with:
           path: ./test-data
           key: pooch-${{ hashFiles('./python/src/xnat_mrd/fetch_datasets.py') }}
+          restore-keys: |
+            pooch-
 
       - name: Install dependencies
         run: |
