@@ -74,7 +74,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: xnat_mrd_xnat4tests_container.tar
-          key:
+          key: |
             xnat-container-${{ matrix.xnat-version }}-${{ matrix.xnat-cs-version
             }}-${{ hashFiles('python/tests/conftest.py', '.xnat4tests/**') }}
 
