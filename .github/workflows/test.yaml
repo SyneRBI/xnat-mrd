@@ -69,9 +69,27 @@ jobs:
           XNAT_VERSION: ${{ matrix.xnat-version }}
         run: ./gradlew clean xnatPluginJar
 
+      - name: Cache xnat_mrd_xnat4tests Docker image
+        id: cache-xnat4tests
+        uses: actions/cache@v4
+        with:
+          path: xnat_mrd_xnat4tests.tar
+          key: xnat_mrd_xnat4tests-latest
+
+      - name: Load xnat_mrd_xnat4tests image from cache
+        if: steps.cache-xnat4tests.outputs.cache-hit == 'true'
+        run: docker load -i xnat_mrd_xnat4tests.tar
+
+      - name: Pull xnat_mrd_xnat4tests image (if not cached)
+        if: steps.cache-xnat4tests.outputs.cache-hit != 'true'
+        run: |
+          docker pull xnat_mrd_xnat4tests:latest
+          docker save xnat_mrd_xnat4tests:latest -o xnat_mrd_xnat4tests.tar
+
       - name: Run tests with pytest
         env:
           XNAT_VERSION: ${{ matrix.xnat-version }}
           XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
+          XNAT4TEST_KEEP_INSTANCE: True
         working-directory: ./python
-        run: pytest --strict-markers
+        run: pytest -m "not slow"
