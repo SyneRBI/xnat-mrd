@@ -14,11 +14,7 @@ from tests.utils import delete_data, XnatConnection
 def mrd_file_path():
     """Provides the mrd_data filepath"""
 
-    mrd_data = (
-        Path(__file__).parents[2]
-        / "test-data"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
-    )
+    mrd_data = get_multidata()
 
     return mrd_data
 

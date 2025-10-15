@@ -53,12 +53,14 @@ def upload_mrd_data(
     experiment = add_exam(xnat_subject, time_id, experiment_date)
 
     dataset_names, multidata = list_ismrmrd_datasets(mrd_file_path)
-   if multidata and ("dataset_2" in dataset_names):
+    if multidata and ("dataset_2" in dataset_names):
         dataset_name = "dataset_2"
-   elif not multidata:
-       dataset_name = dataset_names[0]
-  else:
-        raise NameError(f"Multiple datasets were present: {dataset_names}, but none called 'dataset_2'. Please provide the required dataset name directly to `read_mrd_header`)
+    elif not multidata:
+        dataset_name = dataset_names[0]
+    else:
+        raise NameError(
+            f"Multiple datasets were present: {dataset_names}, but none called 'dataset_2'. Please provide the required dataset name directly to `read_mrd_header`"
+        )
 
     xnat_hdr = read_mrd_header(mrd_file_path, dataset_name)
     add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
