@@ -54,10 +54,10 @@ def mrd_schema_fields():
     return component_paths
 
 
-def verify_headers_match(mrd_file_path, scan):
+def verify_headers_match(mrd_file_path, scan, dataset_name="dataset"):
     """Check headers from a given mrd file match those in an xnat scan object"""
 
-    mrd_headers = read_mrd_header(mrd_file_path)
+    mrd_headers = read_mrd_header(mrd_file_path, dataset_name)
     for mrd_key, mrd_value in mrd_headers.items():
         if (mrd_key[0:16] == "mrd:mrdScanData/") and (mrd_value != ""):
             xnat_header = mrd_key[16:]
@@ -104,6 +104,19 @@ def test_mrd_data_upload(xnat_connection, mrd_file_path):
 
     subject = project.subjects[0]
     verify_headers_match(mrd_file_path, subject.experiments[0].scans[0])
+
+
+@pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")
+def test_mrd_multidata_upload(xnat_connection, mrd_file_multidata_path):
+    project_id = "mrd"
+    xnat_session = xnat_connection.session
+    project = xnat_session.projects[project_id]
+    upload_mrd_data(xnat_session, mrd_file_multidata_path, project_id)
+    assert len(project.subjects) == 1
+    subject = project.subjects[0]
+    verify_headers_match(
+        mrd_file_multidata_path, subject.experiments[0].scans[0], "dataset_2"
+    )
 
 
 @pytest.mark.usefixtures("ensure_mrd_project", "remove_test_data")

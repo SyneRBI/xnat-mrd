@@ -10,7 +10,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
 ]
-dependencies = ["ismrmrd", "xmlschema", "xnat"]
+dependencies = ["h5py", "ismrmrd", "pooch", "xmlschema", "xnat"]
 description = "populate datatype fields"
 license = "Apache-2.0"
 name = "xnatmrd"

@@ -6,6 +6,8 @@ from typing import Any, Tuple
 import ismrmrd
 import xnat
 
+import h5py
+from xnat_mrd.fetch_datasets import get_singledata
 from xnat_mrd.mrd_2_xnat import mrd_2_xnat
 
 # Configure logging
@@ -21,6 +23,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def list_ismrmrd_datasets(mrd_file_path: Path) -> Tuple[list[str], bool]:
+    with h5py.File(mrd_file_path, "r") as f:
+        groups = list(f.keys())
+        if len(groups) > 1:
+            multidata = True
+        else:
+            multidata = False
+
+        return groups, multidata
+
+
 def upload_mrd_data(
     xnat_session: xnat.XNATSession,
     mrd_file_path: Path,
@@ -28,23 +41,28 @@ def upload_mrd_data(
     scan_id: str = "cart_cine_scan",
     experiment_date: str = "2022-05-04",
 ) -> None:
-    logger.info(f"MRD file path: {mrd_file_path}")
-
-    if not mrd_file_path.exists():
-        raise FileNotFoundError(f"MRD file not found: {mrd_file_path}")
-
     xnat_project = verify_project_exists(xnat_session, project_name)
     xnat_subject, time_id = create_unique_subject(xnat_session, xnat_project)
     experiment = add_exam(xnat_subject, time_id, experiment_date)
 
-    xnat_hdr = read_mrd_header(mrd_file_path)
+    dataset_names, multidata = list_ismrmrd_datasets(mrd_file_path)
+    if multidata and ("dataset_2" in dataset_names):
+        dataset_name = "dataset_2"
+    elif not multidata:
+        dataset_name = dataset_names[0]
+    else:
+        raise NameError(
+            f"Multiple datasets were present: {dataset_names}, but none called 'dataset_2'. Please provide the required dataset name directly to `read_mrd_header`"
+        )
+
+    xnat_hdr = read_mrd_header(mrd_file_path, dataset_name)
     add_scan(experiment, xnat_hdr, scan_id, mrd_file_path)
 
 
-def read_mrd_header(mrd_file_path: Path) -> dict[str, Any]:
+def read_mrd_header(mrd_file_path: Path, dataset_name: str) -> dict[str, Any]:
     """Load MRD header and convert to XNAT format"""
 
-    with ismrmrd.Dataset(mrd_file_path, "dataset", create_if_needed=False) as dset:
+    with ismrmrd.Dataset(mrd_file_path, dataset_name, create_if_needed=False) as dset:
         header = dset.read_xml_header()
         return mrd_2_xnat(header, Path(__file__).parent / "ismrmrd.xsd")
 
@@ -159,11 +177,8 @@ def main():
     password = "admin"
     project_name = "mrd"
 
-    mrd_file_path = (
-        Path(__file__).parents[3]
-        / "test-data"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
-    )
+    mrd_file_path = get_singledata()
+    logger.info(f"MRD file path: {mrd_file_path}")
 
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:

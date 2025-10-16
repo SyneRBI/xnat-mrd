@@ -19,6 +19,7 @@ gradle-app.setting
 __pycache__/
 *.egg-info/
 .xnat4tests/
+test-data/
 
 # Log files
 *.log
