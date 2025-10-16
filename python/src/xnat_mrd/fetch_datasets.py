@@ -8,7 +8,7 @@ def _set_up_zenodo_doi(base_url: str):
         path=Path(__file__).parents[3] / "test-data",
         base_url=base_url,
         registry=None,
-        retry_if_failed=5
+        retry_if_failed=5,
     )
     ZENODO.load_registry_from_doi()
     return ZENODO
