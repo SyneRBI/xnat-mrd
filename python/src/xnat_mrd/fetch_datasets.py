@@ -23,9 +23,8 @@ def _fetch_from_zenodo(
     ZENODO = _set_up_zenodo_doi(base_url)
 
     if zip_file:
-        unpack = pooch.Unzip(members=[zip_file])
-        ZENODO.fetch(f"{zip_file}.zip", processor=unpack)
-        image_path = ZENODO.path / f"{zip_file}.zip.unzip" / zip_file / image_name
+        unpack = pooch.Unzip(members=[image_name])
+        image_path = Path(ZENODO.fetch(f"{zip_file}.zip", processor=unpack)[0])
     else:
         image_path = Path(ZENODO.fetch(image_name))
 
@@ -58,6 +57,6 @@ def get_singledata() -> Path:
         return image_path
     return _fetch_from_zenodo(
         "doi:10.5281/zenodo.2633785",
-        "ptb_resolutionphantom_fully_ismrmrd.h5",
+        "PTB_ACRPhantom_GRAPPA/ptb_resolutionphantom_fully_ismrmrd.h5",
         zip_file="PTB_ACRPhantom_GRAPPA",
     )
