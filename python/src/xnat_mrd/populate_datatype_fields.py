@@ -177,18 +177,8 @@ def main():
     password = "admin"
     project_name = "mrd"
 
-    mrd_file_path = (
-        Path(__file__).parents[3]
-        / "test-data"
-        / "PTB_ACRPhantom_GRAPPA.zip.unzip"
-        / "PTB_ACRPhantom_GRAPPA"
-        / "ptb_resolutionphantom_fully_ismrmrd.h5"
-    )
-
-    if mrd_file_path.exists():
-        logger.info(f"MRD file path: {mrd_file_path}")
-    elif not mrd_file_path.exists():
         mrd_file_path = get_singledata()
+        logger.info(f"MRD file path: {mrd_file_path}")
 
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:
