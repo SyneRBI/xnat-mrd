@@ -146,8 +146,8 @@ def xnat_connection(xnat_config, jar_path, plugin_dir):
                 ) from e
 
             connection.restart_xnat()
-        else:
-            connection = XnatConnection(xnat_config)
+    else:
+        connection = XnatConnection(xnat_config)
 
     yield connection
 
