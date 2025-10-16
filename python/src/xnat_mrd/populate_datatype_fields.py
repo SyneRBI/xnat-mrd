@@ -177,8 +177,8 @@ def main():
     password = "admin"
     project_name = "mrd"
 
-        mrd_file_path = get_singledata()
-        logger.info(f"MRD file path: {mrd_file_path}")
+    mrd_file_path = get_singledata()
+    logger.info(f"MRD file path: {mrd_file_path}")
 
     # Use context manager for automatic connection cleanup
     with xnat.connect(xnat_server_address, user=user, password=password) as session:
