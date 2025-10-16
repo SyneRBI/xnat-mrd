@@ -57,6 +57,6 @@ def get_singledata() -> Path:
         return image_path
     return _fetch_from_zenodo(
         "doi:10.5281/zenodo.2633785",
-        "ptb_resolutionphantom_fully_ismrmrd.h5",
+        "PTB_ACRPhantom_GRAPPA/ptb_resolutionphantom_fully_ismrmrd.h5",
         zip_file="PTB_ACRPhantom_GRAPPA",
     )
