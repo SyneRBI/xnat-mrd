@@ -110,41 +110,44 @@ def plugin_version(jar_path):
 
 @pytest.fixture(scope="session")
 def xnat_connection(xnat_config, jar_path, plugin_dir):
-    xnat4tests.start_xnat(xnat_config)
-    connection = XnatConnection(xnat_config)
+    if os.environ.get("XNAT4TEST_USE_EXISTING_CONTAINER", "False").lower() == "false":
+        xnat4tests.start_xnat(xnat_config)
+        connection = XnatConnection(xnat_config)
 
-    # Install Mrd plugin by copying the jar into the container
-    status = subprocess.run(
-        [
-            "docker",
-            "exec",
-            "xnat_mrd_xnat4tests",
-            "ls",
-            plugin_dir.as_posix(),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    plugins_list = status.stdout.split("\n")
+        # Install Mrd plugin by copying the jar into the container
+        status = subprocess.run(
+            [
+                "docker",
+                "exec",
+                "xnat_mrd_xnat4tests",
+                "ls",
+                plugin_dir.as_posix(),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        plugins_list = status.stdout.split("\n")
 
-    if jar_path.name not in plugins_list:
-        try:
-            subprocess.run(
-                [
-                    "docker",
-                    "cp",
-                    str(jar_path),
-                    f"xnat_mrd_xnat4tests:{(plugin_dir / jar_path.name).as_posix()}",
-                ],
-                check=True,
-            )
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
-            ) from e
+        if jar_path.name not in plugins_list:
+            try:
+                subprocess.run(
+                    [
+                        "docker",
+                        "cp",
+                        str(jar_path),
+                        f"xnat_mrd_xnat4tests:{(plugin_dir / jar_path.name).as_posix()}",
+                    ],
+                    check=True,
+                )
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(
+                    f"Command {e.cmd} returned with error code {e.returncode}: {e.output}"
+                ) from e
 
-        connection.restart_xnat()
+            connection.restart_xnat()
+        else:
+            connection = XnatConnection(xnat_config)
 
     yield connection
 

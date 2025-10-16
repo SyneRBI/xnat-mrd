@@ -81,11 +81,21 @@ jobs:
         if: steps.cache-docker-container.outputs.cache-hit == 'true'
         run: docker load -i xnat_mrd_xnat4tests_container.tar
 
+      - name: Start cached container (if available)
+        if: steps.cache-docker-container.outputs.cache-hit == 'true'
+        run: |
+          docker run -d --name xnat_mrd_xnat4tests \
+            -p 8080:8080 \
+            xnat_mrd_xnat4tests:latest
+          # Wait for XNAT to be ready
+          timeout 120 bash -c 'until curl -f http://localhost:8080; do sleep 2; done'
+
       - name: Run tests with pytest
         env:
           XNAT_VERSION: ${{ matrix.xnat-version }}
           XNAT_CS_VERSION: ${{ matrix.xnat-cs-version }}
           XNAT4TEST_KEEP_INSTANCE: "True"
+          XNAT4TEST_USE_EXISTING_CONTAINER: "True" # Tell xnat4tests to use existing container
         working-directory: ./python
         run: pytest tests/test_server.py::test_mrdPlugin_installed
 
